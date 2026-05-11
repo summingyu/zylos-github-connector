@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "port": 3461,
+  "webhookSecret": "your-webhook-secret-here",
+  "commBridge": {
+    "enabled": true,
+    "defaultEndpoint": "default"
+  },
+  "logging": {
+    "level": "info"
+  }
+}

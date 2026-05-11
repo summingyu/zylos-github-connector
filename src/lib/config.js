@@ -15,6 +15,15 @@ export const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
 // Default configuration
 export const DEFAULT_CONFIG = {
   enabled: true,
+  port: 3461,
+  webhookSecret: '',
+  commBridge: {
+    enabled: true,
+    defaultEndpoint: 'default'
+  },
+  logging: {
+    level: 'info'
+  },
   settings: {}
 };
 
@@ -33,6 +42,19 @@ export function loadConfig() {
     } else {
       console.warn(`[github-webhook] Config file not found: ${CONFIG_PATH}`);
       config = { ...DEFAULT_CONFIG };
+    }
+
+    // Apply environment variable overrides
+    if (process.env.GITHUB_WEBHOOK_SECRET) {
+      config.webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+      console.log('[github-webhook] Using webhook secret from environment variable');
+    }
+
+    // Validate webhook secret
+    if (!config.webhookSecret || config.webhookSecret === '') {
+      console.warn('[github-webhook] WARNING: webhookSecret is not configured!');
+      console.warn('[github-webhook] Webhook signature verification will fail.');
+      console.warn('[github-webhook] Set webhookSecret in config.json or GITHUB_WEBHOOK_SECRET environment variable.');
     }
   } catch (err) {
     console.error(`[github-webhook] Failed to load config: ${err.message}`);
