@@ -1,177 +1,177 @@
-# Requirements: Zylos GitHub Webhook Connector
+# Requirements Document: Zylos GitHub Webhook Connector
 
-**Defined:** 2025-05-11
-**Core Value:** AI Agents stay informed about GitHub repository activity in real-time without polling.
+**Date:** 2025-05-11
+**Core Value:** AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 
 ## v1 Requirements
 
 ### Webhook Reception
 
-- [ ] **WEBH-01**: HTTP server receives GitHub Webhook POST requests on configurable port
-- [ ] **WEBH-02**: Component preserves raw request bytes before any parsing for signature verification
-- [ ] **WEBH-03**: Server responds with 2xx status within GitHub's timeout window (~10 seconds)
-- [ ] **WEBH-04**: Component applies security headers (HSTS, X-Frame-Options, nosniff) via helmet middleware
+- [ ] **WEBH-01**：HTTP 服务器在可配置端口上接收 GitHub Webhook POST 请求
+- [ ] **WEBH-02**：组件在任何解析之前保留原始请求字节用于签名验证
+- [ ] **WEBH-03**：服务器在 GitHub 超时窗口内（约 10 秒）响应 2xx 状态
+- [ ] **WEBH-04**：组件通过 helmet 中间件应用安全头（HSTS、X-Frame-Options、nosniff）
 
 ### Security
 
-- [ ] **SECU-01**: Component verifies X-Hub-Signature-256 header using HMAC-SHA256 over raw request body
-- [ ] **SECU-02**: Signature comparison uses crypto.timingSafeEqual() to prevent timing attacks
-- [ ] **SECU-03**: Webhook secret is stored securely in config.json (not hardcoded)
-- [ ] **SECU-04**: Component returns 401 status for invalid signature attempts
-- [ ] **SECU-05**: Logs do not contain webhook secrets or full request bodies
+- [ ] **SECU-01**：组件使用 HMAC-SHA256 验证原始请求体的 X-Hub-Signature-256 头
+- [ ] **SECU-02**：签名比较使用 crypto.timingSafeEqual() 防止时序攻击
+- [ ] **SECU-03**：Webhook secret 安全存储在 config.json 中（不硬编码）
+- [ ] **SECU-04**：组件对无效签名尝试返回 401 状态
+- [ ] **SECU-05**：日志不包含 webhook secret 或完整请求体
 
-### Event Processing
+### Event Handling
 
-- [ ] **EVENT-01**: Component parses event type from X-GitHub-Event header
-- [ ] **EVENT-02**: Component routes events to appropriate handlers based on event type
-- [ ] **EVENT-03**: Component tracks processed X-GitHub-Delivery IDs to prevent duplicate processing
-- [ ] **EVENT-04**: Component returns 200 status for duplicate delivery IDs (ack but skip processing)
+- [ ] **EVENT-01**：组件从 X-GitHub-Event 头解析事件类型
+- [ ] **EVENT-02**：组件根据事件类型将事件路由到相应的处理程序
+- [ ] **EVENT-03**：组件跟踪已处理的 X-GitHub-Delivery ID 以防止重复处理
+- [ ] **EVENT-04**：组件对重复的传递 ID 返回 200 状态（确认但跳过处理）
 
 ### Event Type Support
 
-- [ ] **ISSUE-01**: Component processes issues events (opened, closed, reopened actions)
-- [ ] **ISSUE-02**: Issue notifications include issue title, author, action, and URL
-- [ ] **PR-01**: Component processes pull_request events (opened, closed, merged, ready_for_review actions)
-- [ ] **PR-02**: PR notifications include PR title, author, action, merge status, and URL
-- [ ] **COMM-01**: Component processes issue_comment events (created action)
-- [ ] **COMM-02**: Comment notifications include comment author, issue/PR context, and body preview
-- [ ] **REL-01**: Component processes release events (published action)
-- [ ] **REL-02**: Release notifications include release tag, name, author, and assets
+- [ ] **ISSUE-01**：组件处理 issues 事件（opened、closed、reopened 动作）
+- [ ] **ISSUE-02**：Issue 通知包括 issue 标题、作者、动作和 URL
+- [ ] **PR-01**：组件处理 pull_request 事件（opened、closed、merged、ready_for_review 动作）
+- [ ] **PR-02**：PR 通知包括 PR 标题、作者、动作、合并状态和 URL
+- [ ] **COMM-01**：组件处理 issue_comment 事件（created 动作）
+- [ ] **COMM-02**：评论通知包括评论作者、issue/PR 上下文和正文预览
+- [ ] **REL-01**：组件处理 release 事件（published 动作）
+- [ ] **REL-02**：发布通知包括发布标签、名称、作者和资源
 
 ### Message Formatting
 
-- [ ] **FMT-01**: Component formats event data into human-readable notification messages
-- [ ] **FMT-02**: Messages include clickable URLs to the relevant GitHub resource
-- [ ] **FMT-03**: Messages clearly indicate the action that occurred (opened, closed, merged, etc.)
+- [ ] **FMT-01**：组件将事件数据格式化为人类可读的通知消息
+- [ ] **FMT-02**：消息包含相关 GitHub 资源的可点击 URL
+- [ ] **FMT-03**：消息清晰指示发生的动作（opened、closed、merged 等）
 
 ### Notification Delivery
 
-- [ ] **SEND-01**: Component delivers notifications via C4 comm-bridge
-- [ ] **SEND-02**: Component supports configurable notification endpoint
-- [ ] **SEND-03**: Component logs success/failure of notification delivery attempts
+- [ ] **SEND-01**：组件通过 C4 通信桥传递通知
+- [ ] **SEND-02**：组件支持可配置的通知端点
+- [ ] **SEND-03**：组件记录通知传递尝试的成功/失败
 
 ### Configuration
 
-- [ ] **CONF-01**: Component loads configuration from ~/zylos/components/github-webhook/config.json
-- [ ] **CONF-02**: Component supports hot-reload of configuration changes via file watcher
-- [ ] **CONF-03**: Configurable webhook secret for signature verification
-- [ ] **CONF-04**: Configurable server port (default: 3461)
-- [ ] **CONF-05**: Configurable log level (info, debug, error)
+- [ ] **CONF-01**：组件从 ~/zylos/components/github-webhook/config.json 加载配置
+- [ ] **CONF-02**：组件通过文件监视器支持配置更改的热重载
+- [ ] **CONF-03**：可配置的 webhook secret 用于签名验证
+- [ ] **CONF-04**：可配置的服务器端口（默认：3461）
+- [ ] **CONF-05**：可配置的日志级别（info、debug、error）
 
 ### Component Lifecycle
 
-- [ ] **LIFE-01**: Component can be started and stopped via PM2
-- [ ] **LIFE-02**: Component implements graceful shutdown on SIGINT/SIGTERM signals
-- [ ] **LIFE-03**: ecosystem.config.cjs defines PM2 service configuration
-- [ ] **LIFE-04**: Component respects enabled flag in config (exit if disabled)
+- [ ] **LIFE-01**：组件可以通过 PM2 启动和停止
+- [ ] **LIFE-02**：组件在 SIGINT/SIGTERM 信号上实现优雅关闭
+- [ ] **LIFE-03**：ecosystem.config.cjs 定义 PM2 服务配置
+- [ ] **LIFE-04**：组件遵守配置中的启用标志（如果禁用则退出）
 
 ### Component Metadata
 
-- [ ] **META-01**: SKILL.md includes component metadata (name, version, type, description, config)
-- [ ] **META-02**: SKILL.md type is set to "communication"
-- [ ] **META-03**: SKILL.md declares dependency on comm-bridge
-- [ ] **META-04**: SKILL.md config section defines required webhook secret parameter
+- [ ] **META-01**：SKILL.md 包含组件元数据（name、version、type、description、config）
+- [ ] **META-02**：SKILL.md type 设置为 "communication"
+- [ ] **META-03**：SKILL.md 声明对 comm-bridge 的依赖
+- [ ] **META-04**：SKILL.md config 部分定义必需的 webhook secret 参数
 
 ### Documentation
 
-- [ ] **DOC-01**: README.md includes installation instructions
-- [ ] **DOC-02**: README.md includes configuration instructions (port, secret, endpoints)
-- [ ] **DOC-03**: README.md includes GitHub Webhook setup instructions (URL configuration)
+- [ ] **DOC-01**：README.md 包含安装说明
+- [ ] **DOC-02**：README.md 包含配置说明（端口、secret、端点）
+- [ ] **DOC-03**：README.md 包含 GitHub Webhook 设置说明（URL 配置）
 
 ### Testing
 
-- [ ] **TEST-01**: Component includes test for signature verification (valid and invalid signatures)
-- [ ] **TEST-02**: Component includes test for event type parsing
-- [ ] **TEST-03**: Component includes test for delivery ID deduplication
+- [ ] **TEST-01**：组件包含签名验证测试（有效和无效签名）
+- [ ] **TEST-02**：组件包含事件类型解析测试
+- [ ] **TEST-03**：组件包含传递 ID 去重测试
 
 ## v2 Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
+延迟到未来版本。已跟踪但不在当前路线图中。
 
 ### Enhanced Reliability
 
-- **RELIA-01**: Persistent deduplication store (Redis) for delivery ID tracking across restarts
-- **RELIA-02**: Retry logic for failed notification delivery with exponential backoff
-- **RELIA-03**: Dead-letter queue for permanently failed events
+- **RELIA-01**：持久化去重存储（Redis）用于跨重启的传递 ID 跟踪
+- **RELIA-02**：失败通知传递的重试逻辑和指数退避
+- **RELIA-03**：永久失败事件的死信队列
 
 ### Advanced Features
 
-- **FEAT-01**: Event filtering by label, author, branch, or action
-- **FEAT-02**: Custom message templates for user-defined notification formats
-- **FEAT-03**: Multi-repository configuration support
-- **FEAT-04**: Payload transformation via user-provided JavaScript functions
+- **FEAT-01**：按标签、作者、分支或动作过滤事件
+- **FEAT-02**：自定义消息模板用于用户定义的通知格式
+- **FEAT-03**：多仓库配置支持
+- **FEAT-04**：通过用户提供的 JavaScript 函数进行负载转换
 
 ### Observability
 
-- **OBS-01**: Structured JSON logging with request metadata
-- **OBS-02**: Metrics for request count, verification failures, delivery latency
-- **OBS-03**: Health check endpoint (/health) for monitoring
+- **OBS-01**：带有请求元数据的结构化 JSON 日志
+- **OBS-02**：请求数、验证失败、传递延迟的指标
+- **OBS-03**：用于监控的健康检查端点（/health）
 
 ## Out of Scope
 
 | Feature | Reason |
-|---------|--------|
-| Bidirectional GitHub API interaction | One-way notification flow only (stated requirement) |
-| Real-time streaming (SSE/WebSocket) | GitHub uses webhook push model, not streaming |
-| Historical event sync | Not part of webhook contract; use GitHub API separately |
-| Webhook management UI | Notification-focused component; UI is v2+ |
-| Multiple auth methods | Webhook secret is sufficient for v1 |
+|------|------|
+| 双向 GitHub API 交互 | 仅单向通知流（已声明需求） |
+| 实时流式传输（SSE/WebSocket） | GitHub 使用 webhook 推送模式，非流式 |
+| 历史事件同步 | 不属于 webhook 契约；单独使用 GitHub API |
+| Webhook 管理界面 | 面向通知的组件；UI 在 v2+ |
+| 多种认证方式 | v1 的 webhook secret 已足够 |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WEBH-01 | Phase 1 | Pending |
-| WEBH-02 | Phase 1 | Pending |
-| WEBH-03 | Phase 1 | Pending |
-| WEBH-04 | Phase 1 | Pending |
-| SECU-01 | Phase 1 | Pending |
-| SECU-02 | Phase 1 | Pending |
-| SECU-03 | Phase 1 | Pending |
-| SECU-04 | Phase 1 | Pending |
-| SECU-05 | Phase 1 | Pending |
-| EVENT-01 | Phase 1 | Pending |
-| EVENT-02 | Phase 1 | Pending |
-| EVENT-03 | Phase 1 | Pending |
-| EVENT-04 | Phase 1 | Pending |
-| ISSUE-01 | Phase 2 | Pending |
-| ISSUE-02 | Phase 2 | Pending |
-| PR-01 | Phase 2 | Pending |
-| PR-02 | Phase 2 | Pending |
-| COMM-01 | Phase 2 | Pending |
-| COMM-02 | Phase 2 | Pending |
-| REL-01 | Phase 2 | Pending |
-| REL-02 | Phase 2 | Pending |
-| FMT-01 | Phase 2 | Pending |
-| FMT-02 | Phase 2 | Pending |
-| FMT-03 | Phase 2 | Pending |
-| SEND-01 | Phase 2 | Pending |
-| SEND-02 | Phase 2 | Pending |
-| SEND-03 | Phase 2 | Pending |
-| CONF-01 | Phase 3 | Pending |
-| CONF-02 | Phase 3 | Pending |
-| CONF-03 | Phase 3 | Pending |
-| CONF-04 | Phase 3 | Pending |
-| CONF-05 | Phase 3 | Pending |
-| LIFE-01 | Phase 3 | Pending |
-| LIFE-02 | Phase 3 | Pending |
-| LIFE-03 | Phase 3 | Pending |
-| LIFE-04 | Phase 3 | Pending |
-| META-01 | Phase 4 | Pending |
-| META-02 | Phase 4 | Pending |
-| META-03 | Phase 4 | Pending |
-| META-04 | Phase 4 | Pending |
-| DOC-01 | Phase 4 | Pending |
-| DOC-02 | Phase 4 | Pending |
-| DOC-03 | Phase 4 | Pending |
-| TEST-01 | Phase 4 | Pending |
-| TEST-02 | Phase 4 | Pending |
-| TEST-03 | Phase 4 | Pending |
+| WEBH-01 | Phase 1 | 待处理 |
+| WEBH-02 | Phase 1 | 待处理 |
+| WEBH-03 | Phase 1 | 待处理 |
+| WEBH-04 | Phase 1 | 待处理 |
+| SECU-01 | Phase 1 | 待处理 |
+| SECU-02 | Phase 1 | 待处理 |
+| SECU-03 | Phase 1 | 待处理 |
+| SECU-04 | Phase 1 | 待处理 |
+| SECU-05 | Phase 1 | 待处理 |
+| EVENT-01 | Phase 1 | 待处理 |
+| EVENT-02 | Phase 1 | 待处理 |
+| EVENT-03 | Phase 1 | 待处理 |
+| EVENT-04 | Phase 1 | 待处理 |
+| ISSUE-01 | Phase 2 | 待处理 |
+| ISSUE-02 | Phase 2 | 待处理 |
+| PR-01 | Phase 2 | 待处理 |
+| PR-02 | Phase 2 | 待处理 |
+| COMM-01 | Phase 2 | 待处理 |
+| COMM-02 | Phase 2 | 待处理 |
+| REL-01 | Phase 2 | 待处理 |
+| REL-02 | Phase 2 | 待处理 |
+| FMT-01 | Phase 2 | 待处理 |
+| FMT-02 | Phase 2 | 待处理 |
+| FMT-03 | Phase 2 | 待处理 |
+| SEND-01 | Phase 2 | 待处理 |
+| SEND-02 | Phase 2 | 待处理 |
+| SEND-03 | Phase 2 | 待处理 |
+| CONF-01 | Phase 3 | 待处理 |
+| CONF-02 | Phase 3 | 待处理 |
+| CONF-03 | Phase 3 | 待处理 |
+| CONF-04 | Phase 3 | 待处理 |
+| CONF-05 | Phase 3 | 待处理 |
+| LIFE-01 | Phase 3 | 待处理 |
+| LIFE-02 | Phase 3 | 待处理 |
+| LIFE-03 | Phase 3 | 待处理 |
+| LIFE-04 | Phase 3 | 待处理 |
+| META-01 | Phase 4 | 待处理 |
+| META-02 | Phase 4 | 待处理 |
+| META-03 | Phase 4 | 待处理 |
+| META-04 | Phase 4 | 待处理 |
+| DOC-01 | Phase 4 | 待处理 |
+| DOC-02 | Phase 4 | 待处理 |
+| DOC-03 | Phase 4 | 待处理 |
+| TEST-01 | Phase 4 | 待处理 |
+| TEST-02 | Phase 4 | 待处理 |
+| TEST-03 | Phase 4 | 待处理 |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 43
-- Unmapped: 0 ✓
+- v1 Requirements：43 个总计
+- Mapped to Phases：43 个
+- Unmapped：0 个 ✓
 
 ---
 *Requirements defined: 2025-05-11*

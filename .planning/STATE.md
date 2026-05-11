@@ -2,21 +2,22 @@
 
 **Initialized:** 2025-05-11
 **Current Phase:** Phase 1
-**Status:** Ready to execute
+**Status:** Context captured, ready to plan
+**Last Session:** 2025-05-11 Phase 1 context discussion
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2025-05-11)
 
-**Core value:** AI Agents stay informed about GitHub repository activity in real-time without polling.
+**Core Value:** AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 
-**Current focus:** Phase 1 — HTTP Server Foundation
+**Current Focus:** Phase 1 — HTTP Server Foundation
 
 ---
 
 ## Progress Summary
 
-| Artifact | Status | Location |
+| Document | Status | Location |
 |----------|--------|----------|
 | PROJECT.md | ✓ Complete | `.planning/PROJECT.md` |
 | config.json | ✓ Complete | `.planning/config.json` |
@@ -28,7 +29,7 @@ See: `.planning/PROJECT.md` (updated 2025-05-11)
 
 ## Roadmap Overview
 
-**12 phases** | **43 requirements** | **MVP mode** | **Fine granularity**
+**12 Phases** | **43 Requirements** | **MVP Mode** | **Fine-grained**
 
 **Current Phase:** Phase 1 — HTTP Server Foundation
 
@@ -41,7 +42,7 @@ See: `.planning/PROJECT.md` (updated 2025-05-11)
 ### Commands
 
 ```bash
-# Start work on current phase
+# Start current phase work
 /gsd-discuss-phase 1
 
 # Plan current phase
@@ -50,7 +51,7 @@ See: `.planning/PROJECT.md` (updated 2025-05-11)
 # Execute current phase
 /gsd-execute-phase 1
 
-# View progress
+# Check progress
 /gsd-progress
 ```
 
@@ -66,7 +67,7 @@ See: `.planning/PROJECT.md` (updated 2025-05-11)
 ### Configuration
 
 - **Mode:** YOLO (auto-approve)
-- **Granularity:** Fine (8-12 phases)
+- **Granularity:** Fine-grained (8-12 phases)
 - **Parallelization:** Enabled
 - **Research:** Enabled
 - **Plan Check:** Enabled
