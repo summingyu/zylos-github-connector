@@ -125,7 +125,9 @@ export async function routeEvent(eventType, payload) {
       };
     } catch (err) {
       // Re-throw handler errors for upstream handling
-      throw new Error(`Handler error for event '${eventType}': ${err.message}`);
+      // 保留原始错误并添加上下文
+      err.message = `Handler error for event '${eventType}': ${err.message}`;
+      throw err;
     }
   }
 
@@ -140,7 +142,9 @@ export async function routeEvent(eventType, payload) {
         result
       };
     } catch (err) {
-      throw new Error(`Wildcard handler error for event '${eventType}': ${err.message}`);
+      // 保留原始错误并添加上下文
+      err.message = `Wildcard handler error for event '${eventType}': ${err.message}`;
+      throw err;
     }
   }
 
