@@ -15,6 +15,7 @@ import {
   registerWildcardHandler,
   routeEvent
 } from './lib/router.js';
+import { extractEventMetadata } from './lib/event-parser.js';
 import * as handlers from './lib/handlers/index.js';
 
 // Initialize
@@ -108,9 +109,9 @@ app.get('/health', async (request, reply) => {
 // Webhook receiving route
 app.post('/webhook', async (request, reply) => {
   const signature = request.headers['x-hub-signature-256'];
-  const eventType = request.headers['x-github-event'] || 'unknown';
-  const deliveryId = request.headers['x-github-delivery'] || 'unknown';
-  const config = getConfig();
+  const metadata = extractEventMetadata(request.headers);
+  const eventType = metadata.eventType;
+  const deliveryId = metadata.deliveryId;
 
   // 检查配置中的 webhook secret
   if (!config.webhookSecret || config.webhookSecret === '') {
