@@ -9,6 +9,7 @@ import fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
 import { verifySignature } from './lib/verifier.js';
+import { hasDeliveryBeenSeen, markDeliveryAsSeen } from './lib/dedupe.js';
 
 // Initialize
 console.log(`[github-webhook] Starting...`);
@@ -176,7 +177,28 @@ app.post('/webhook', async (request, reply) => {
     delivery: deliveryId
   });
 
-  return reply.code(202).send({ message: 'Webhook accepted' });
+  // 去重检查 - 防止重复处理相同的 delivery ID
+  if (hasDeliveryBeenSeen(deliveryId)) {
+    app.log.info({
+      msg: 'Duplicate delivery ID, skipping processing',
+      event: eventType,
+      delivery: deliveryId
+    });
+    return reply.code(200).send({
+      message: 'Duplicate, already processed',
+      event: eventType,
+      delivery: deliveryId
+    });
+  }
+
+  // 标记为已处理
+  markDeliveryAsSeen(deliveryId);
+
+  return reply.code(202).send({
+    message: 'Webhook accepted',
+    event: eventType,
+    delivery: deliveryId
+  });
 });
 
 // Main startup function
