@@ -26,5 +26,12 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@fastify/helmet": "^13.0.2",
+    "fastify": "^5.8.5",
+    "fastify-raw-body": "^5.0.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^13.1.3"
+  }
 }

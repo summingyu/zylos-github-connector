@@ -5,7 +5,9 @@
  * GitHub Webhook connector for Zylos AI Agent Platform
  */
 
-import { getConfig, watchConfig, DATA_DIR } from './lib/config.js';
+import fastify from 'fastify';
+import helmet from '@fastify/helmet';
+import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
 
 // Initialize
 console.log(`[github-webhook] Starting...`);
@@ -20,39 +22,158 @@ if (!config.enabled) {
   process.exit(0);
 }
 
+// Update default config to include port, logging, and max payload size
+DEFAULT_CONFIG.port = 3461;
+DEFAULT_CONFIG.maxPayloadSize = '10mb';
+DEFAULT_CONFIG.logging = {
+  level: 'info',
+  pretty: true
+};
+
+// Create Fastify instance with logger and body limit
+// Convert string size (e.g., '10mb') to bytes
+const maxPayloadSizeStr = config.maxPayloadSize || '10mb';
+const parseSize = (size) => {
+  if (typeof size === 'number') return size;
+  const units = { b: 1, kb: 1024, mb: 1024 * 1024, gb: 1024 * 1024 * 1024 };
+  const match = String(size).toLowerCase().match(/^(\d+(?:\.\d+)?)\s*([a-z]+)?$/);
+  if (!match) return 10 * 1024 * 1024; // Default 10MB
+  const value = parseFloat(match[1]);
+  const unit = match[2] || 'b';
+  return Math.floor(value * (units[unit] || 1));
+};
+const maxPayloadSize = parseSize(maxPayloadSizeStr);
+
+const fastifyOptions = {
+  logger: {
+    level: config.logging?.level || 'info',
+    transport: config.logging?.pretty !== false
+      ? { target: 'pino-pretty' }
+      : undefined
+  },
+  bodyLimit: maxPayloadSize
+};
+
+const app = fastify(fastifyOptions);
+
+// Register Helmet for security headers
+await app.register(helmet);
+
+// Register raw body parser for HMAC signature verification (critical for Phase 2)
+app.addContentTypeParser('application/json', { parseAs: 'buffer' },
+  (req, body, done) => {
+    // Preserve raw body for HMAC verification in Phase 2
+    req.rawBody = body;
+    done(null, JSON.parse(body));
+  }
+);
+
 // Watch for config changes
 watchConfig((newConfig) => {
-  console.log(`[github-webhook] Config reloaded`);
+  app.log.info(`[github-webhook] Config reloaded`);
   config = newConfig;
   if (!newConfig.enabled) {
-    console.log(`[github-webhook] Component disabled, stopping...`);
+    app.log.info(`[github-webhook] Component disabled, stopping...`);
     shutdown();
   }
 });
 
-// Main component logic
-async function main() {
-  // TODO: Implement your component logic here
-  //
-  // Communication components: set up platform SDK, listen for events, forward to C4
-  // Capability components: start HTTP server or other service interface
-  // Utility components: run task and exit (remove the keepalive below)
+// Health check route
+app.get('/health', async (request, reply) => {
+  return {
+    status: 'ok',
+    service: 'github-webhook',
+    timestamp: new Date().toISOString()
+  };
+});
 
-  console.log(`[github-webhook] Running`);
+// Webhook receiving route
+app.post('/webhook', async (request, reply) => {
+  const { event, delivery } = request.headers;
+
+  app.log.info({
+    msg: 'Webhook received',
+    event: request.headers['x-github-event'],
+    delivery: request.headers['x-github-delivery'],
+    signature: request.headers['x-hub-signature-256'] ? 'present' : 'missing'
+  });
+
+  return reply.code(202).send({
+    message: 'Webhook received (not yet verified)',
+    note: 'Signature verification will be implemented in Phase 2'
+  });
+});
+
+// Main startup function
+async function start() {
+  try {
+    const port = config.port || 3461;
+    const host = '0.0.0.0';
+
+    await app.listen({ port, host });
+
+    app.log.info(`[github-webhook] Server listening on http://${host}:${port}`);
+    app.log.info(`[github-webhook] Max payload size: ${maxPayloadSize}`);
+    app.log.info(`[github-webhook] Ready to receive GitHub webhooks`);
+  } catch (err) {
+    app.log.error(`[github-webhook] Failed to start server: ${err.message}`);
+    process.exit(1);
+  }
 }
 
-// Graceful shutdown
-function shutdown() {
-  console.log(`[github-webhook] Shutting down...`);
-  // TODO: Close connections, stop listeners, cleanup
+// Graceful shutdown with timeout protection
+let isShuttingDown = false;
+
+async function shutdown() {
+  if (isShuttingDown) {
+    return; // Already shutting down
+  }
+  isShuttingDown = true;
+
+  app.log.info(`[github-webhook] Shutting down...`);
+
+  // Force exit after 10 seconds if graceful shutdown fails
+  const timeout = setTimeout(() => {
+    app.log.warn(`[github-webhook] Shutdown timeout, forcing exit`);
+    process.exit(1);
+  }, 10000);
+
+  try {
+    await app.close();
+    app.log.info(`[github-webhook] Server closed gracefully`);
+    clearTimeout(timeout);
+  } catch (err) {
+    app.log.error(`[github-webhook] Error during shutdown: ${err.message}`);
+  }
+
   process.exit(0);
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+// Signal handlers
+process.on('SIGINT', () => {
+  app.log.info(`[github-webhook] Received SIGINT`);
+  shutdown();
+});
 
-// Run
-main().catch(err => {
+process.on('SIGTERM', () => {
+  app.log.info(`[github-webhook] Received SIGTERM`);
+  shutdown();
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (err) => {
+  app.log.error(`[github-webhook] Uncaught exception: ${err.message}`);
+  app.log.error(err.stack);
+  shutdown();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  app.log.error(`[github-webhook] Unhandled rejection at ${promise}: ${reason}`);
+  shutdown();
+});
+
+// Start the server
+start().catch(err => {
   console.error(`[github-webhook] Fatal error:`, err);
   process.exit(1);
 });
