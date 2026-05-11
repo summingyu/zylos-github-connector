@@ -1,170 +1,170 @@
-# Features Research: GitHub Webhook Components
+# 功能研究：GitHub Webhook 组件
 
-**Research Date:** 2025-05-11
+**研究日期：** 2025-05-11
 
-## Executive Summary
+## 执行摘要
 
-Based on analysis of GitHub webhook handlers and communication platforms, the **table stakes** features for a production webhook receiver are: signature verification, raw-body preservation, quick acknowledgment with async processing, and basic deduplication. **Differentiators** include advanced filtering, custom templates, replay prevention, and observability integration.
+基于对 GitHub webhook 处理程序和通信平台的分析，生产 webhook 接收器的**基础功能**包括：签名验证、原始体保留、快速确认和异步处理、基本去重。**差异化功能**包括高级过滤、自定义模板、重放防护、可观测性集成。
 
-## Feature Categories
+## 功能类别
 
-### 1. Webhook Reception (Table Stakes)
+### 1. Webhook 接收（基础功能）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **HTTP Server** | Listen on configurable port for POST requests | Required |
-| **Signature Verification** | HMAC-SHA256 over X-Hub-Signature-256 | Required |
-| **Raw Body Capture** | Preserve exact bytes before parsing | Required |
-| **Event Type Parsing** | Parse GitHub event types from headers | Required |
-| **CORS Handling** | Support cross-origin requests if needed | Required |
+| **HTTP 服务器** | 监听可配置端口的 POST 请求 | 必需 |
+| **签名验证** | X-Hub-Signature-256 的 HMAC-SHA256 | 必需 |
+| **原始体捕获** | 在解析前保留确切字节 | 必需 |
+| **事件类型解析** | 从头解析 GitHub 事件类型 | 必需 |
+| **CORS 处理** | 如需要支持跨域请求 | 必需 |
 
-### 2. Security (Table Stakes)
+### 2. 安全（基础功能）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **HMAC Verification** | Constant-time comparison using timingSafeEqual | Required |
-| **Secret Storage** | Environment variable or secure store | Required |
-| **TLS Support** | HTTPS endpoint | Required |
-| **Rate Limiting** | Basic per-IP or per-source limiting | Recommended |
-| **Security Headers** | Helmet middleware (HSTS, X-Frame-Options, etc.) | Recommended |
+| **HMAC 验证** | 使用 timingSafeEqual 进行常量时间比较 | 必需 |
+| **Secret 存储** | 环境变量或安全存储 | 必需 |
+| **TLS 支持** | HTTPS 端点 | 必需 |
+| **速率限制** | 基本 per-IP 或 per-source 限制 | 推荐 |
+| **安全头** | Helmet 中间件（HSTS、X-Frame-Options 等） | 推荐 |
 
-### 3. Event Processing (Table Stakes)
+### 3. 事件处理（基础功能）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **Quick Acknowledgment** | Return 2xx within ~10s (GitHub timeout) | Required |
-| **Async Processing** | Queue events for background processing | Required |
-| **Event Routing** | Route to handlers based on event type | Required |
-| **Payload Parsing** | Extract relevant fields from JSON payload | Required |
-| **Error Handling** | Graceful handling of malformed payloads | Required |
+| **快速确认** | 在约 10s 内返回 2xx（GitHub 超时） | 必需 |
+| **异步处理** | 将事件排队进行后台处理 | 必需 |
+| **事件路由** | 基于事件类型路由到处理程序 | 必需 |
+| **负载解析** | 从 JSON 负载中提取相关字段 | 必需 |
+| **错误处理** | 优雅处理格式错误的负载 | 必需 |
 
-### 4. Notification Delivery (Table Stakes)
+### 4. 通知传递（基础功能）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **C4 Comm-Bridge Integration** | Route messages via comm-bridge | Required |
-| **Message Formatting** | Human-readable event summaries | Required |
-| **Endpoint Specification** | Support different notification endpoints | Required |
-| **Delivery Status** | Log success/failure of notification delivery | Required |
+| **C4 通信桥集成** | 通过通信桥路由消息 | 必需 |
+| **消息格式化** | 人类可读的事件摘要 | 必需 |
+| **端点规范** | 支持不同的通知端点 | 必需 |
+| **传递状态** | 记录通知传递的成功/失败 | 必需 |
 
-### 5. Event Type Support (Table Stakes for v1)
+### 5. 事件类型支持（v1 基础功能）
 
-| Event Type | Actions | Notification Content |
+| 事件类型 | 动作 | 通知内容 |
 |------------|---------|---------------------|
-| **issues** | opened, closed, reopened, edited, deleted | Issue title, author, URL, action |
-| **pull_request** | opened, closed, merged, ready_for_review | PR title, author, URL, action, merge status |
-| **issue_comment** | created, edited, deleted | Comment author, issue/PR context, body preview |
-| **release** | published | Release tag, name, author, assets |
+| **issues** | opened、closed、reopened、edited、deleted | Issue 标题、作者、URL、动作 |
+| **pull_request** | opened、closed、merged、ready_for_review | PR 标题、作者、URL、动作、合并状态 |
+| **issue_comment** | created、edited、deleted | 评论作者、issue/PR 上下文、正文预览 |
+| **release** | published | 发布标签、名称、作者、资源 |
 
-### 6. Configuration (Table Stakes)
+### 6. 配置（基础功能）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **Webhook Secret** | GitHub webhook secret for signature verification | Required |
-| **Server Port** | Configurable listening port | Required |
-| **Comm-Bridge Endpoint** | Target for notification delivery | Required |
-| **Enabled Events** | Which event types to process | Recommended |
-| **Log Level** | Configurable logging verbosity | Recommended |
+| **Webhook Secret** | 签名验证的 GitHub webhook secret | 必需 |
+| **服务器端口** | 可配置监听端口 | 必需 |
+| **通信桥端点** | 通知传递的目标 | 必需 |
+| **启用事件** | 要处理的事件类型 | 推荐 |
+| **日志级别** | 可配置的日志详细程度 | 推荐 |
 
-### 7. Idempotency & Reliability (Recommended)
+### 7. 幂等性和可靠性（推荐）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **Delivery ID Tracking** | Track X-GitHub-Delivery to prevent duplicates | Recommended |
-| **Timestamp Validation** | Reject events older than 5-10 minutes | Recommended |
-| **Retry Logic** | Retry failed notification delivery | Recommended |
-| **Dead-Letter Queue** | Store permanently failed events | Optional |
+| **传递 ID 跟踪** | 跟踪 X-GitHub-Delivery 以防止重复 | 推荐 |
+| **时间戳验证** | 拒绝超过 5-10 分钟的事件 | 推荐 |
+| **重试逻辑** | 重试失败的通知传递 | 推荐 |
+| **死信队列** | 永久失败事件的存储 | 可选 |
 
-### 8. Advanced Features (Differentiators - v2+)
+### 8. 高级功能（差异化 - v2+）
 
-| Feature | Description | Complexity |
+| 功能 | 描述 | 复杂度 |
 |---------|-------------|------------|
-| **Event Filtering** | Filter by label, author, branch, action | Medium |
-| **Custom Message Templates** | User-defined notification formats | Medium |
-| **Multi-Repository Support** | Handle events from multiple repos | Medium |
-| **Payload Transformation** | Custom JavaScript transformation functions | High |
-| **Rich Notifications** | Support formatting, tables, code blocks | High |
-| **Webhook Management UI** | View received events, delivery status | High |
-| **Persistent Event Store** | Store all events for historical analysis | High |
+| **事件过滤** | 按标签、作者、分支、动作过滤 | 中等 |
+| **自定义消息模板** | 用户定义的通知格式 | 中等 |
+| **多仓库支持** | 处理来自多个仓库的事件 | 中等 |
+| **负载转换** | 自定义 JavaScript 转换函数 | 高 |
+| **富通知** | 支持格式化、表格、代码块 | 高 |
+| **Webhook 管理 UI** | 查看接收的事件、传递状态 | 高 |
+| **持久事件存储** | 存储所有事件用于历史分析 | 高 |
 
-### 9. Observability (Recommended)
+### 9. 可观测性（推荐）
 
-| Feature | Description | Priority |
+| 功能 | 描述 | 优先级 |
 |---------|-------------|----------|
-| **Structured Logging** | JSON logs with request metadata | Recommended |
-| **Metrics** | Request count, verification failures, delivery latency | Recommended |
-| **Health Check** | /health endpoint for monitoring | Recommended |
-| **Request Tracing** | Correlate webhook -> notification delivery | Optional |
+| **结构化日志** | 带有请求元数据的 JSON 日志 | 推荐 |
+| **指标** | 请求数、验证失败、传递延迟 | 推荐 |
+| **健康检查** | /health 端点用于监控 | 推荐 |
+| **请求跟踪** | 关联 webhook -> 通知传递 | 可选 |
 
-## Anti-Features (What NOT to Build)
+## 反功能（不构建的功能）
 
-| Feature | Reason |
+| 功能 | 原因 |
 |---------|--------|
-| **Bidirectional GitHub API** | Out of scope for v1; stated one-way flow |
-| **Real-time Streaming** | GitHub uses webhook push model, not SSE/WebSocket |
-| **Historical Event Sync** | Not part of webhook contract; use GitHub API |
-| **Complex UI** | Notification-focused; management UI is v2+ |
-| **Multiple Auth Methods** | Only webhook secret needed for v1 |
+| **双向 GitHub API** | v1 超出范围；声明单向流 |
+| **实时流式传输** | GitHub 使用 webhook 推送模式，非 SSE/WebSocket |
+| **历史事件同步** | 不属于 webhook 契约；使用 GitHub API |
+| **复杂 UI** | 面向通知；管理 UI 是 v2+ |
+| **多种认证方法** | v1 仅需 webhook secret |
 
-## Feature Dependencies
+## 功能依赖
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     HTTP Server + Raw Body                   │
+│                     HTTP 服务器 + 原始体                   │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Signature Verification                     │
+│                   签名验证                     │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Deduplication (Delivery ID Check)              │
+│              去重（传递 ID 检查）              │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Message Formatting                        │
+│                    消息格式化                        │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 C4 Comm-Bridge Delivery                      │
+│                 C4 通信桥传递                      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Complexity Estimates
+## 复杂度估算
 
-| Feature | Implementation Complexity | Testing Complexity |
-|---------|-------------------------|---------------------|
-| HTTP Server + Raw Body | Low | Low |
-| Signature Verification | Low (with library) | Medium (security) |
-| Event Type Routing | Low | Low |
-| Message Formatting | Medium | Medium |
-| C4 Integration | Low | Medium |
-| Deduplication | Medium | Medium |
-| Event Filtering | Medium | High |
-| Custom Templates | High | High |
+| 功能 | 实现复杂度 | 测试复杂度 |
+|---------|-----------------|---------------------|
+| HTTP 服务器 + 原始体 | 低 | 低 |
+| 签名验证 | 低（使用库） | 中（安全） |
+| 事件类型路由 | 低 | 低 |
+| 消息格式化 | 中 | 中 |
+| C4 集成 | 低 | 中 |
+| 去重 | 中 | 中 |
+| 事件过滤 | 中 | 高 |
+| 自定义模板 | 高 | 高 |
 
-## v1 Scope Definition
+## v1 范围定义
 
-**Table Stakes for v1:**
-- HTTP server with raw body capture
-- HMAC-SHA256 signature verification
-- Event routing for issues, pull_request, issue_comment, release
-- C4 comm-bridge message delivery
-- Configurable webhook secret, port, log level
-- Basic error handling and logging
-- PM2 process management
-- SKILL.md, config.json, ecosystem.config.cjs
+**v1 基础功能：**
+- 带有原始体捕获的 HTTP 服务器
+- HMAC-SHA256 签名验证
+- issues、pull_request、issue_comment、release 的事件路由
+- C4 通信桥消息传递
+- 可配置的 webhook secret、端口、日志级别
+- 基本错误处理和日志
+- PM2 进程管理
+- SKILL.md、config.json、ecosystem.config.cjs
 
-**v2 Candidates (differentiators):**
-- Persistent deduplication store
-- Event filtering (by label, author, action)
-- Custom message templates
-- Multi-repository configuration
+**v2 候选（差异化功能）：**
+- 持久化去重存储
+- 事件过滤（按标签、作者、动作）
+- 自定义消息模板
+- 多仓库配置
 
 ---
 
-**Last Updated:** 2025-05-11 after initial research
+**最后更新：** 2025-05-11 初始研究后

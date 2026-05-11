@@ -1,90 +1,90 @@
-# Research Summary: Zylos GitHub Webhook Connector
+# 研究摘要：Zylos GitHub Webhook 连接器
 
-**Research Date:** 2025-05-11
-**Status:** Complete
+**研究日期：** 2025-05-11
+**状态：** 完成
 
-## Key Findings
+## 关键发现
 
-### Stack Recommendations
+### 技术栈推荐
 
-| Decision | Recommendation | Confidence |
+| 决策 | 推荐 | 置信度 |
 |----------|----------------|------------|
-| **HTTP Framework** | Fastify (latest) | High |
-| **Verification** | @octokit/webhooks library | High |
-| **Raw Body** | fastify-raw-body plugin | High |
-| **Logging** | Pino (Fastify default) | High |
-| **Process Mgmt** | PM2 (Zylos requirement) | Required |
+| **HTTP 框架** | Fastify（最新） | 高 |
+| **验证** | @octokit/webhooks 库 | 高 |
+| **原始体** | fastify-raw-body 插件 | 高 |
+| **日志** | Pino（Fastify 默认） | 高 |
+| **进程管理** | PM2（Zylos 要求） | 必需 |
 
-**Why Fastify:** ~4-5x higher throughput than Express, built-in validation, plugin ecosystem, aligns with Zylos performance goals.
+**为什么选择 Fastify：** 吞吐量比 Express 高约 4-5 倍，内置验证，插件生态系统，符合 Zylos 性能目标。
 
-### Table Stakes Features (Must Have)
+### 基础功能（必须有）
 
-1. **Security:** HMAC-SHA256 signature verification, constant-time comparison, TLS support
-2. **Reliability:** Raw body preservation, ack-first pattern, X-GitHub-Delivery deduplication
-3. **Event Support:** issues, pull_request, issue_comment, release events
-4. **Integration:** C4 comm-bridge message delivery
-5. **Operations:** PM2 management, config hot-reload, structured logging
+1. **安全：** HMAC-SHA256 签名验证、常量时间比较、TLS 支持
+2. **可靠性：** 原始体保留、确认优先模式、X-GitHub-Delivery 去重
+3. **事件支持：** issues、pull_request、issue_comment、release 事件
+4. **集成：** C4 通信桥消息传递
+5. **运维：** PM2 管理、配置热重载、结构化日志
 
-### Differentiators (v2+)
+### 差异化功能（v2+）
 
-- Event filtering (by label, author, action)
-- Custom message templates
-- Multi-repository configuration
-- Persistent deduplication store (Redis)
-- Webhook management UI
+- 事件过滤（按标签、作者、动作）
+- 自定义消息模板
+- 多仓库配置
+- 持久化去重存储（Redis）
+- Webhook 管理 UI
 
-### Watch Out For
+### 注意事项
 
-| Pitfall | Impact | Mitigation |
+| 陷阱 | 影响 | 缓解措施 |
 |---------|--------|------------|
-| **Raw body transformation** | Signature mismatch | Capture raw bytes before parsing |
-| **Timing attacks** | Secret leak via timing | Use crypto.timingSafeEqual() |
-| **Replay attacks** | Duplicate processing | Track X-GitHub-Delivery IDs |
-| **Blocking handlers** | Timeouts, retries | Ack-first + async processing |
-| **Memory dedup loss** | Duplicates after restart | Persistent store (v2+) |
+| **原始体转换** | 签名不匹配 | 在解析前捕获原始字节 |
+| **时序攻击** | 通过时序泄漏 secret | 使用 crypto.timingSafeEqual() |
+| **重放攻击** | 重复处理 | 跟踪 X-GitHub-Delivery ID |
+| **阻塞处理程序** | 超时、重试 | 确认优先 + 异步处理 |
+| **内存去重丢失** | 重启后重复 | 持久化存储（v2+） |
 
-## Architecture Highlights
+## 架构亮点
 
-**Flow:** GitHub → HTTPS POST → Fastify → Signature Verify → Dedupe Check → Event Routing → Format → C4 Comm-Bridge → User Channel
+**流程：** GitHub → HTTPS POST → Fastify → 签名验证 → 去重检查 → 事件路由 → 格式化 → C4 通信桥 → 用户通道
 
-**Key Design Decisions:**
-- **One-way flow:** No GitHub API write operations in v1
-- **Ack-first:** Return 202 quickly, process asynchronously
-- **Standalone port:** Direct exposure, not Caddy reverse proxy
-- **In-memory dedup:** Acceptable for v1 single-instance
+**关键设计决策：**
+- **单向流：** v1 中无 GitHub API 写操作
+- **确认优先：** 快速返回 202，异步处理
+- **独立端口：** 直接暴露，非 Caddy 反向代理
+- **内存去重：** v1 单实例可接受
 
-## Technical Constraints
+## 技术约束
 
-- Must preserve raw request bytes for HMAC verification
-- Must respond within GitHub's ~10s timeout
-- Must handle payloads up to 25MB (set limits)
-- Must integrate with C4 comm-bridge for delivery
+- 必须为 HMAC 验证保留原始请求字节
+- 必须在 GitHub 约 10s 超时内响应
+- 必须处理高达 25MB 的负载（设置限制）
+- 必须通过 C4 通信桥传递
 
-## Recommended v1 Scope
+## 推荐 v1 范围
 
-**Core:**
-- Fastify HTTP server with raw-body capture
-- @octokit/webhooks signature verification
-- In-memory X-GitHub-Delivery deduplication
-- Event handlers for issues, PRs, comments, releases
-- C4 comm-bridge integration
-- PM2 ecosystem configuration
-- Basic logging and error handling
+**核心：**
+- 带原始体捕获的 Fastify HTTP 服务器
+- @octokit/webhooks 签名验证
+- 内存 X-GitHub-Delivery 去重
+- issues、PRs、评论、发布的事件处理程序
+- C4 通信桥集成
+- PM2 ecosystem 配置
+- 基本日志和错误处理
 
-**Explicitly Out of Scope:**
-- Bidirectional GitHub API interaction
-- Persistent deduplication store
-- Event filtering
-- Custom templates
-- Management UI
+**明确超出范围：**
+- 双向 GitHub API 交互
+- 持久化去重存储
+- 事件过滤
+- 自定义模板
+- 管理 UI
 
-## Evidence Quality
+## 证据质量
 
-- **Stack Research:** Based on 2025 framework benchmarks and GitHub official docs
-- **Features Research:** Synthesized from webhook platform best practices
-- **Architecture:** Derived from zylos-telegram and template patterns
-- **Pitfalls:** Curated from security research and production incidents
+- **技术栈研究：** 基于 2025 框架基准测试和 GitHub 官方文档
+- **功能研究：** 从 webhook 平台最佳实践综合
+- **架构：** 源自 zylos-telegram 和模板模式
+- **陷阱：** 从安全研究和生产事件精选
 
 ---
 
-**Next Steps:** Define requirements (REQUIREMENTS.md) based on research findings.
+**下一步：** 基于研究结果定义需求（REQUIREMENTS.md）。

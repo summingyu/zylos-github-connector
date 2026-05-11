@@ -1,326 +1,326 @@
-# Pitfalls Research: GitHub Webhook Components
+# 陷阱研究：GitHub Webhook 组件
 
-**Research Date:** 2025-05-11
+**研究日期：** 2025-05-11
 
-## Executive Summary
+## 执行摘要
 
-Building webhook receivers has well-documented failure modes. The **critical pitfalls** are: raw-body transformation breaking HMAC, timing-attack leaks via string comparison, replay attacks, blocking handlers causing retries, and in-memory deduplication lost on restart. This document catalogs these pitfalls with warning signs, prevention strategies, and phase mappings.
+构建 webhook 接收器有记录详尽的失败模式。**关键陷阱**是：原始体转换破坏 HMAC、通过字符串比较泄漏时序攻击、重放攻击、阻塞处理程序导致重试、以及重启时丢失内存去重。本文档记录了这些陷阱及其警告迹象、预防策略和阶段映射。
 
-## Critical Pitfalls
+## 关键陷阱
 
-### 1. Raw Body Transformation Breaking HMAC
+### 1. 原始体转换破坏 HMAC
 
-**The Problem:**
-JSON parsers, middleware, and proxies can transform the request body (whitespace, Unicode escape sequences, encoding) before signature verification, causing HMAC mismatches even for legitimate webhooks.
+**问题：**
+JSON 解析器、中间件和代理可能在签名验证前转换请求体（空格、Unicode 转义序列、编码），导致即使合法 webhook 的 HMAC 也不匹配。
 
-**Warning Signs:**
-- Signature verification fails randomly
-- Works in dev but fails in production
-- Different behavior between Express/Fastify/bare http
+**警告迹象：**
+- 签名验证随机失败
+- 在开发环境工作但在生产环境失败
+- Express/Fastify/bare http 之间行为不同
 
-**Prevention:**
-- Capture raw bytes BEFORE any parsing
-- Use framework-specific raw-body capture:
-  - Express: `express.raw({ type: 'application/json' })`
-  - Fastify: Content-type parser with `parseAs: 'buffer'`
-  - Bare: Read stream directly into Buffer
-- Verify signature over raw Buffer, not parsed JSON
+**预防：**
+- 在任何解析之前捕获原始字节
+- 使用框架特定的原始体捕获：
+  - Express：`express.raw({ type: 'application/json' })`
+  - Fastify：带有 `parseAs: 'buffer'` 的内容类型解析器
+  - Bare：直接将流读入 Buffer
+- 对原始 Buffer 验证签名，而非解析的 JSON
 
-**What to Avoid:**
+**避免：**
 ```javascript
-// ❌ WRONG - verifying over parsed JSON
+// ❌ 错误 - 对解析的 JSON 验证
 const payload = JSON.parse(req.body);
 const signature = computeHmac(payload);
 
-// ✓ CORRECT - verify over raw bytes
+// ✓ 正确 - 对原始字节验证
 const signature = computeHmac(req.rawBody);
 ```
 
-**Phase to Address:** Phase 1 (core webhook setup)
+**应对阶段：** 阶段 1（核心 webhook 设置）
 
 ---
 
-### 2. Timing Attack Leaks via String Comparison
+### 2. 通过字符串比较泄漏时序攻击
 
-**The Problem:**
-Using `===` or `Buffer.compare()` for signature comparison leaks timing information that can be exploited to gradually guess the correct signature.
+**问题：**
+对签名使用 `===` 或 `Buffer.compare()` 进行比较会泄漏可通过利用逐步猜测正确签名的时序信息。
 
-**Warning Signs:**
-- Any code using `===`, `==`, or `.equals()` for signature comparison
-- Custom comparison logic
+**警告迹象：**
+- 任何使用 `===`、`==` 或 `.equals()` 进行签名比较的代码
+- 自定义比较逻辑
 
-**Prevention:**
-- ALWAYS use `crypto.timingSafeEqual()` for signature comparison
-- Ensure buffers are same length before comparison
-- Compare full signature including `sha256=` prefix
+**预防：**
+- 始终使用 `crypto.timingSafeEqual()` 进行签名比较
+- 确保比较前缓冲区长度相同
+- 比较完整签名包括 `sha256=` 前缀
 
-**What to Avoid:**
+**避免：**
 ```javascript
-// ❌ WRONG - timing leak
+// ❌ 错误 - 时序泄漏
 if (computedSig === receivedSig) { /* ... */ }
 
-// ❌ WRONG - timing leak
+// ❌ 错误 - 时序泄漏
 if (computedSig.toString() === receivedSig) { /* ... */ }
 
-// ✓ CORRECT - constant-time comparison
+// ✓ 正确 - 常量时间比较
 const a = Buffer.from(computedSig);
 const b = Buffer.from(receivedSig);
 if (a.length === b.length && crypto.timingSafeEqual(a, b)) { /* ... */ }
 ```
 
-**Phase to Address:** Phase 1 (signature verification)
+**应对阶段：** 阶段 1（签名验证）
 
 ---
 
-### 3. Replay Attacks via Captured Signatures
+### 3. 通过捕获签名重放攻击
 
-**The Problem:**
-Attackers can capture a valid webhook payload with its signature and re-send it later, causing duplicate processing (e.g., double charges, duplicate state transitions).
+**问题：**
+攻击者可以捕获有效的 webhook 负载及其签名，稍后重新发送，导致重复处理（例如双重收费、重复状态转换）。
 
-**Warning Signs:**
-- No tracking of processed event IDs
-- Same event being processed multiple times
-- "Weird" duplicate actions in logs
+**警告迹象：**
+- 没有跟踪已处理的事件 ID
+- 同一事件被多次处理
+- 日志中显示"奇怪"的重复动作
 
-**Prevention:**
-- Extract `X-GitHub-Delivery` header (unique per delivery)
-- Store processed delivery IDs in persistent store
-- Check for duplicates before processing
-- Optionally validate timestamp (reject events > 5-10 minutes old)
+**预防：**
+- 提取 `X-GitHub-Delivery` 头（每次传递唯一）
+- 在持久化存储中存储已处理的传递 ID
+- 处理前检查重复
+- 可选验证时间戳（拒绝超过 5-10 分钟的事件）
 
-**v1 Approach:**
-- In-memory Set of processed delivery IDs
-- Survives restarts by GitHub retrying
-- Acceptable for single-instance deployment
+**v1 方法：**
+- 内存 Set 存储已处理的传递 ID
+- 通过 GitHub 重试在重启后存活
+- 对于单实例部署可接受
 
-**v2+ Enhancement:**
-- Redis/DynamoDB for persistent deduplication
-- TTL aligned with GitHub retry window (days)
+**v2+ 增强：**
+- Redis/DynamoDB 用于持久化去重
+- TTL 与 GitHub 重试窗口对齐（天数）
 
-**Phase to Address:** Phase 1 (basic in-memory), Phase 2+ (persistent store)
+**应对阶段：** 阶段 1（基本内存），阶段 2+（持久化存储如需要）
 
 ---
 
-### 4. Blocking Handlers Causing Retries
+### 4. 阻塞处理程序导致重试
 
-**The Problem:**
-Performing long-running work synchronously in the webhook handler causes GitHub to timeout (~10s) and retry, leading to duplicate processing and potential retry storms.
+**问题：**
+在 webhook 处理程序中同步执行长时间工作会导致 GitHub 超时（约 10s）并重试，导致重复处理和潜在重试风暴。
 
-**Warning Signs:**
-- High processing latency (>5s per request)
-- GitHub delivering same event multiple times
-- Logs showing timeout errors
+**警告迹象：**
+- 高处理延迟（每个请求 > 5s）
+- GitHub 传递同一事件多次
+- 日志显示超时错误
 
-**Prevention:**
-- **Ack-first pattern:** Verify → Dedupe → Enqueue → Reply 202
-- Perform work asynchronously after acknowledgment
-- Use queues (BullMQ, SQS, Redis lists) for background processing
+**预防：**
+- **确认优先模式：** 验证 → 去重 → 入队 → 回复 202
+- 确认后异步执行工作
+- 使用队列（BullMQ、SQS、Redis 列表）进行后台处理
 
-**What to Avoid:**
+**避免：**
 ```javascript
-// ❌ WRONG - blocking handler
+// ❌ 错误 - 阻塞处理程序
 app.post('/webhook', (req, res) => {
   verifySignature(req);
   const message = formatMessage(req.body);
-  sendToCommBridge(message); // <-- blocks!
-  doSlowDatabaseWork();       // <-- blocks!
+  sendToCommBridge(message); // <-- 阻塞！
+  doSlowDatabaseWork();       // <-- 阻塞！
   res.status(200).send();
 });
 
-// ✓ CORRECT - ack-first
+// ✓ 正确 - 确认优先
 app.post('/webhook', async (req, res) => {
   verifySignature(req);
   if (isDuplicate(req)) return res.status(200).send('duplicate');
-  await enqueueWork(req.body);  // <-- fast!
+  await enqueueWork(req.body);  // <-- 快速！
   res.status(202).send('accepted');
 });
-// Worker processes queue asynchronously
+// 工作程序异步处理队列
 ```
 
-**Phase to Address:** Phase 1 (ack-first pattern)
+**应对阶段：** 阶段 1（确认优先模式）
 
 ---
 
-### 5. In-Memory Deduplication Lost on Restart
+### 5. 重启时丢失内存去重
 
-**The Problem:**
-Using in-memory storage for delivery IDs means all deduplication state is lost on restart, causing GitHub's retried events to be processed again.
+**问题：**
+使用内存存储传递 ID 意味着重启时所有去重状态丢失，导致 GitHub 重试的事件被再次处理。
 
-**Warning Signs:**
-- Duplicate processing after deployments/restarts
-- Higher duplicate rate on Mondays (after weekend deploys)
+**警告迹象：**
+- 部署/重启后重复处理
+- 周一（周末部署后）重复率更高
 
-**Prevention:**
-- **v1 acceptable:** In-memory is okay if GitHub retry window is short
-- **v2+ required:** Persistent store (Redis, DynamoDB, SQLite)
-- Set TTL on dedup keys (24 hours to cover retry window)
+**预防：**
+- **v1 可接受：** 如果 GitHub 重试窗口短，内存可以
+- **v2+ 必需：** 持久化存储（Redis、DynamoDB、SQLite）
+- 在去重键上设置 TTL（24 小时以覆盖重试窗口）
 
-**Trade-offs:**
-| Approach | Pros | Cons | Phase |
+**权衡：**
+| 方法 | 优点 | 缺点 | 阶段 |
 |----------|------|------|-------|
-| In-memory Set | Zero dependencies | Lost on restart | v1 |
-| Redis | Fast, persistent | Additional service | v2+ |
-| SQLite | No external dep | Slower than Redis | v2+ |
-| DynamoDB | Serverless | Cost, latency | v2+ |
+| 内存 Set | 零依赖 | 重启时丢失 | v1 |
+| Redis | 快速、持久 | 额外服务 | v2+ |
+| SQLite | 无外部依赖 | 比 Redis 慢 | v2+ |
+| DynamoDB | 无服务器 | 成本、延迟 | v2+ |
 
-**Phase to Address:** Phase 1 (in-memory OK), Phase 2+ (persistent if needed)
-
----
-
-## Important Pitfalls
-
-### 6. Missing Security Headers
-
-**The Problem:**
-Without security headers, the endpoint is vulnerable to clickjacking, MIME sniffing, and other browser-based attacks (if exposed to web).
-
-**Warning Signs:**
-- Missing Helmet or equivalent middleware
-- No HSTS, X-Frame-Options, X-Content-Type-Options
-
-**Prevention:**
-- Use `@fastify/helmet` or `helmet` for Express
-- Configure CSP (can disable for pure API)
-- Enable HSTS, X-Frame-Options, nosniff
-
-**Phase to Address:** Phase 1
+**应对阶段：** 阶段 1（内存可以），阶段 2+（如需要持久化）
 
 ---
 
-### 7. Logging Sensitive Data
+## 重要陷阱
 
-**The Problem:**
-Logging webhook secrets, full payloads, or authentication tokens exposes credentials in log files.
+### 6. 缺少安全头
 
-**Warning Signs:**
-- Secrets in log files
-- Full request bodies logged
-- Authentication headers logged
+**问题：**
+没有安全头，端点容易受到点击劫持、MIME 嗅探和其他基于浏览器的攻击（如果暴露给 web）。
 
-**Prevention:**
-- Never log webhook secret
-- Log only safe metadata (event type, delivery ID, repo)
-- Redact sensitive headers in logs
-- Use structured logging with field-level control
+**警告迹象：**
+- 缺少 Helmet 或等效中间件
+- 没有 HSTS、X-Frame-Options、X-Content-Type-Options
 
-**What to Log:**
-- ✓ Event type, action, repository
+**预防：**
+- 对 Express 使用 `@fastify/helmet` 或 `helmet`
+- 配置 CSP（纯 API 可以禁用）
+- 启用 HSTS、X-Frame-Options、nosniff
+
+**应对阶段：** 阶段 1
+
+---
+
+### 7. 记录敏感数据
+
+**问题：**
+记录 webhook secret、完整负载或认证令牌会将凭据暴露到日志文件中。
+
+**警告迹象：**
+- 日志文件中有 secret
+- 记录完整请求体
+- 记录认证头
+
+**预防：**
+- 永不记录 webhook secret
+- 只记录安全元数据（事件类型、传递 ID、仓库）
+- 在日志中编辑敏感头
+- 使用字段级控制的结构化日志
+
+**记录内容：**
+- ✓ 事件类型、动作、仓库
 - ✓ X-GitHub-Delivery ID
-- ✓ Verification success/failure
-- ✓ Processing timestamp, latency
+- ✓ 验证成功/失败
+- ✓ 处理时间戳、延迟
 - ✗ Webhook secret
-- ✗ Full request body
-- ✗ Authentication headers
+- ✗ 完整请求体
+- ✗ 认证头
 
-**Phase to Address:** Phase 1
+**应对阶段：** 阶段 1
 
 ---
 
-### 8. Payload Size Overflow
+### 8. 负载大小溢出
 
-**The Problem:**
-GitHub payloads can be up to 25MB. Unbounded body parsing can cause memory exhaustion or crashes.
+**问题：**
+GitHub 负载最多可达 25MB。无界体解析可能导致内存耗尽或崩溃。
 
-**Warning Signs:**
-- OOM kills under load
-- Slow processing for large payloads
-- High memory usage
+**警告迹象：**
+- 负载下 OOM 终止
+- 大负载处理缓慢
+- 高内存使用
 
-**Prevention:**
-- Set body size limit in Fastify/Express
-- Reject payloads over threshold with 413
-- Consider streaming for very large payloads
+**预防：**
+- 在 Fastify/Express 中设置体大小限制
+- 使用 413 拒绝超过阈值的负载
+- 考虑对非常大的负载进行流式处理
 
 ```javascript
-// Fastify body limit
+// Fastify 体限制
 fastify.addContentTypeParser('application/json', {
   bodyLimit: 10 * 1024 * 1024 // 10MB
 }, { parseAs: 'buffer' }, handler);
 ```
 
-**Phase to Address:** Phase 1
+**应对阶段：** 阶段 1
 
 ---
 
-## Minor Pitfalls
+## 次要陷阱
 
-### 9. Incorrect Event Type Parsing
+### 9. 错误的事件类型解析
 
-**The Problem:**
-Relying on payload content instead of the `X-GitHub-Event` header for event type determination can lead to misrouted events.
+**问题：**
+依赖负载内容而不是 `X-GitHub-Event` 头来确定事件类型可能导致事件路由错误。
 
-**Prevention:**
-- Always read `X-GitHub-Event` header for event type
-- Parse payload only after event type is known
-- Validate event type is in supported list
+**预防：**
+- 始终从 `X-GitHub-Event` 头读取事件类型
+- 在已知事件类型后解析负载
+- 验证事件类型在支持列表中
 
-**Phase to Address:** Phase 1
-
----
-
-### 10. Missing Graceful Shutdown
-
-**The Problem:**
-Abrupt shutdown drops in-flight webhooks and can cause lost events or corrupted state.
-
-**Prevention:**
-- Handle SIGINT/SIGTERM
-- Close server gracefully (stop accepting new connections)
-- Wait for in-flight handlers to complete (with timeout)
-- Flush logs and close connections
-
-**Phase to Address:** Phase 1 (template provides pattern)
+**应对阶段：** 阶段 1
 
 ---
 
-## Pitfall Detection Checklist
+### 10. 缺少优雅关闭
 
-Use this checklist during code review and testing:
+**问题：**
+突然关闭会丢弃进行中的 webhook 并可能导致丢失事件或状态损坏。
 
-- [ ] Raw body captured BEFORE any parsing
-- [ ] Signature uses `crypto.timingSafeEqual()`
-- [ ] X-GitHub-Delivery tracked for deduplication
-- [ ] Handler returns 2xx quickly (< 10s)
-- [ ] No blocking work in request handler
-- [ ] Security headers (Helmet) configured
-- [ ] No secrets in logs
-- [ ] Body size limit configured
-- [ ] Event type from header, not payload
-- [ ] Graceful shutdown implemented
+**预防：**
+- 处理 SIGINT/SIGTERM
+- 优雅关闭服务器（停止接受新连接）
+- 等待进行中的处理程序完成（带超时）
+- 刷新日志并关闭连接
 
-## Testing for Pitfalls
+**应对阶段：** 阶段 1（模板提供模式）
 
-### Unit Tests
-- Test signature verification with valid/invalid signatures
-- Test timing-safe equality (edge cases: different lengths)
-- Test deduplication (duplicate detection)
+---
 
-### Integration Tests
-- Send real GitHub webhooks (use smee.io or ngrok)
-- Test with large payloads (> 1MB)
-- Test timeout scenarios (slow downstream)
-- Test restart scenarios (duplicate detection)
+## 陷阱检测检查清单
 
-### Security Tests
-- Attempt replay attacks (resend captured webhook)
-- Attempt forgery (invalid signature)
-- Test timing attack resistance (statistical analysis)
+在代码审查和测试期间使用此检查清单：
 
-## Phase Mapping
+- [ ] 在任何解析前捕获原始体
+- [ ] 签名使用 `crypto.timingSafeEqual()`
+- [ ] X-GitHub-Delivery 跟踪用于去重
+- [ ] 处理程序快速返回 2xx（< 10s）
+- [ ] 请求处理程序中没有阻塞工作
+- [ ] 配置安全头（Helmet）
+- [ ] 日志中没有 secret
+- [ ] 配置了体大小限制
+- [ ] 事件类型从头获取，而非负载
+- [ ] 实现了优雅关闭
 
-| Pitfall | Phase | Priority |
+## 测试陷阱
+
+### 单元测试
+- 使用有效/无效签名测试签名验证
+- 测试常量时间相等性（边缘情况：不同长度）
+- 测试去重（重复检测）
+
+### 集成测试
+- 发送真实 GitHub webhook（使用 smee.io 或 ngrok）
+- 使用大负载（> 1MB）测试
+- 测试超时场景（慢速下游）
+- 测试重启场景（重复检测）
+
+### 安全测试
+- 尝试重放攻击（重新发送捕获的 webhook）
+- 尝试伪造（无效签名）
+- 测试时序攻击抵抗性（统计分析）
+
+## 阶段映射
+
+| 陷阱 | 阶段 | 优先级 |
 |--------|-------|----------|
-| Raw body transformation | 1 | Critical |
-| Timing attacks | 1 | Critical |
-| Replay attacks | 1 (basic) / 2+ (persistent) | Critical |
-| Blocking handlers | 1 | Critical |
-| In-memory dedup loss | 1 (OK) / 2+ (fix if needed) | Important |
-| Security headers | 1 | Important |
-| Logging sensitive data | 1 | Important |
-| Payload overflow | 1 | Important |
-| Event type parsing | 1 | Minor |
-| Graceful shutdown | 1 | Minor |
+| 原始体转换 | 1 | 关键 |
+| 时序攻击 | 1 | 关键 |
+| 重放攻击 | 1（基本）/ 2+（持久化） | 关键 |
+| 阻塞处理程序 | 1 | 关键 |
+| 内存去重丢失 | 1（可以）/ 2+（如需要修复） | 重要 |
+| 安全头 | 1 | 重要 |
+| 记录敏感数据 | 1 | 重要 |
+| 负载溢出 | 1 | 重要 |
+| 事件类型解析 | 1 | 次要 |
+| 优雅关闭 | 1 | 次要 |
 
 ---
 
-**Last Updated:** 2025-05-11 after initial research
+**最后更新：** 2025-05-11 初始研究后

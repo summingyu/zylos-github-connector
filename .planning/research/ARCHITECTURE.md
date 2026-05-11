@@ -1,57 +1,57 @@
-# Architecture Research: Zylos GitHub Webhook Connector
+# 架构研究：Zylos GitHub Webhook 连接器
 
-**Research Date:** 2025-05-11
+**研究日期：** 2025-05-11
 
-## Executive Summary
+## 执行摘要
 
-The GitHub Webhook Connector follows the Zylos communication component pattern with a **unidirectional flow**: GitHub → HTTP Server → Signature Verification → Event Routing → Message Formatting → C4 Comm-Bridge. The architecture emphasizes **security-first design** (HMAC verification), **fast acknowledgment** (async processing), and **modular event handlers**.
+GitHub Webhook 连接器遵循 Zylos 通信组件模式，采用**单向流程**：GitHub → HTTP 服务器 → 签名验证 → 事件路由 → 消息格式化 → C4 通信桥。架构强调**安全优先设计**（HMAC 验证）、**快速确认**（异步处理）和**模块化事件处理程序**。
 
-## Component Architecture
+## 组件架构
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        GitHub Server                              │
+│                        GitHub 服务器                              │
 │  ┌────────────┐                                                   │
-│  │   Event    │                                                   │
-│  │  Triggered │                                                   │
+│  │   事件     │                                                   │
+│  │  已触发   │                                                   │
 │  └─────┬──────┘                                                   │
 └────────┼──────────────────────────────────────────────────────────┘
          │
-         │ HTTPS POST (HMAC-SHA256 signed)
+         │ HTTPS POST（HMAC-SHA256 签名）
          │
          ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                   zylos-github-webhook                            │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  1. HTTP Server (Fastify)                                  │  │
-│  │     - Raw body capture (Buffer)                            │  │
-│  │     - Configurable port (default 3461)                     │  │
-│  │     - Helmet security headers                              │  │
+│  │  1. HTTP 服务器（Fastify）                                  │  │
+│  │     - 原始体捕获（Buffer）                            │  │
+│  │     - 可配置端口（默认 3461）                     │  │
+│  │     - Helmet 安全头                              │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  2. Signature Verification                                  │  │
-│  │     - Extract X-Hub-Signature-256 header                   │  │
-│  │     - Compute HMAC-SHA256 over raw body                    │  │
-│  │     - Constant-time comparison (timingSafeEqual)           │  │
-│  │     - Return 401 on mismatch                                │  │
+│  │  2. 签名验证                                  │  │
+│  │     - 提取 X-Hub-Signature-256 头                   │  │
+│  │     - 计算原始体的 HMAC-SHA256                    │  │
+│  │     - 常量时间比较（timingSafeEqual）           │  │
+│  │     - 不匹配时返回 401                                │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  3. Deduplication Check                                     │  │
-│  │     - Extract X-GitHub-Delivery header                     │  │
-│  │     - Check if delivery ID processed (in-memory set)       │  │
-│  │     - Return 200 if duplicate                              │  │
+│  │  3. 去重检查                                     │  │
+│  │     - 提取 X-GitHub-Delivery 头                     │  │
+│  │     - 检查传递 ID 是否已处理（内存集合）       │  │
+│  │     - 如果重复则返回 200                              │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  4. Event Type Parsing                                      │  │
-│  │     - Extract X-GitHub-Event header                        │  │
-│  │     - Parse JSON payload                                   │  │
-│  │     - Route to handler based on event type                 │  │
+│  │  4. 事件类型解析                                      │  │
+│  │     - 提取 X-GitHub-Event 头                        │  │
+│  │     - 解析 JSON 负载                                   │  │
+│  │     - 根据事件类型路由到处理程序                 │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 │                         │                                        │
 │         ┌───────────────┼───────────────┐                        │
@@ -66,145 +66,145 @@ The GitHub Webhook Connector follows the Zylos communication component pattern w
 │                         │                                        │
 │                         ▼                                        │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  5. Message Formatting                                      │  │
-│  │     - Extract relevant fields (title, author, action)       │  │
-│  │     - Format human-readable message                        │  │
-│  │     - Include URL for context                              │  │
+│  │  5. 消息格式化                                      │  │
+│  │     - 提取相关字段（标题、作者、动作）       │  │
+│  │     - 格式化人类可读消息                        │  │
+│  │     - 包含 URL 用于上下文                              │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 │                         │                                        │
 │                         ▼                                        │
 │  ┌────────────────────────────────────────────────────────────┐  │
-│  │  6. C4 Comm-Bridge Delivery                                 │  │
-│  │     - Execute comm-bridge send.js                          │  │
-│  │     - Pass formatted message                               │  │
-│  │     - Endpoint determined by config                        │  │
+│  │  6. C4 通信桥传递                                 │  │
+│  │     - 执行 comm-bridge send.js                          │  │
+│  │     - 传递格式化消息                               │  │
+│  │     - 端点由配置确定                        │  │
 │  └──────────────────────┬─────────────────────────────────────┘  │
 └─────────────────────────┼──────────────────────────────────────────┘
                           │
                           ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                   C4 Comm-Bridge                                 │
+│                   C4 通信桥                                 │
 │  ┌────────────┐                                                   │
-│  │  Route to  │                                                   │
-│  │  Channel   │                                                   │
+│  │  路由到    │                                                   │
+│  │  通道     │                                                   │
 │  └────────────┘                                                   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-## Module Boundaries
+## 模块边界
 
-### src/index.js (Entry Point)
+### src/index.js（入口点）
 
-- Initialize Fastify server
-- Register middleware (raw-body, helmet)
-- Register webhook route
-- Graceful shutdown handler
-- Config hot-reload watcher
+- 初始化 Fastify 服务器
+- 注册中间件（raw-body、helmet）
+- 注册 webhook 路由
+- 优雅关闭处理程序
+- 配置热重载监视器
 
-**Dependencies:** `src/lib/config.js`, `src/lib/webhook.js`
+**依赖：** `src/lib/config.js`、`src/lib/webhook.js`
 
-### src/lib/webhook.js (Webhook Handler)
+### src/lib/webhook.js（Webhook 处理程序）
 
-- Signature verification logic
-- Deduplication check
-- Event type routing
-- Acknowledgment response
+- 签名验证逻辑
+- 去重检查
+- 事件类型路由
+- 确认响应
 
-**Dependencies:** `src/lib/handlers/*.js`, `src/lib/formatters/*.js`
+**依赖：** `src/lib/handlers/*.js`、`src/lib/formatters/*.js`
 
-### src/lib/handlers/ (Event Handlers)
+### src/lib/handlers/（事件处理程序）
 
-| File | Event Type | Responsibility |
+| 文件 | 事件类型 | 职责 |
 |------|-----------|----------------|
-| `issues.js` | issues | Extract issue data, determine action |
-| `pull-request.js` | pull_request | Extract PR data, merge status |
-| `issue-comment.js` | issue_comment | Extract comment, context (issue/PR) |
-| `release.js` | release | Extract release info, assets |
+| `issues.js` | issues | 提取 issue 数据，确定动作 |
+| `pull-request.js` | pull_request | 提取 PR 数据，合并状态 |
+| `issue-comment.js` | issue_comment | 提取评论，issue/PR 上下文 |
+| `release.js` | release | 提取发布信息，资源 |
 
-**Dependencies:** `src/lib/formatters/*.js`
+**依赖：** `src/lib/formatters/*.js`
 
-### src/lib/formatters/ (Message Formatters)
+### src/lib/formatters/（消息格式化程序）
 
-| File | Output | Responsibility |
+| 文件 | 输出 | 职责 |
 |------|--------|----------------|
-| `issues.js` | String | Human-readable issue notification |
-| `pull-request.js` | String | Human-readable PR notification |
-| `issue-comment.js` | String | Human-readable comment notification |
-| `release.js` | String | Human-readable release notification |
+| `issues.js` | 字符串 | 人类可读的 issue 通知 |
+| `pull-request.js` | 字符串 | 人类可读的 PR 通知 |
+| `issue-comment.js` | 字符串 | 人类可读的评论通知 |
+| `release.js` | 字符串 | 人类可读的发布通知 |
 
-### src/lib/config.js (Configuration)
+### src/lib/config.js（配置）
 
-- Load config from `~/zylos/components/github-webhook/config.json`
-- Hot-reload via file watcher
-- Default config values
+- 从 `~/zylos/components/github-webhook/config.json` 加载配置
+- 通过文件监视器热重载
+- 默认配置值
 
-### scripts/send.js (Test Interface)
+### scripts/send.js（测试接口）
 
-- Direct message sending for testing
-- Bypass C4 comm-bridge
-- Used for development/debugging
+- 直接消息发送用于测试
+- 绕过 C4 通信桥
+- 用于开发/调试
 
-## Data Flow
+## 数据流
 
-### Request Flow
+### 请求流
 
-1. **Receive HTTP POST** → Fastify captures raw body as Buffer
-2. **Verify Signature** → HMAC-SHA256 comparison, return 401 if invalid
-3. **Check Dedupe** → Look up X-GitHub-Delivery, return 200 if duplicate
-4. **Parse Event** → Extract event type from header, parse JSON
-5. **Route to Handler** → Call appropriate handler based on event type
-6. **Format Message** → Handler formats human-readable message
-7. **Send Notification** → Execute C4 comm-bridge send command
-8. **Acknowledge** → Return 202 (accepted) to GitHub
+1. **接收 HTTP POST** → Fastify 捕获原始体为 Buffer
+2. **验证签名** → HMAC-SHA256 比较，无效则返回 401
+3. **检查去重** → 查找 X-GitHub-Delivery，如果重复则返回 200
+4. **解析事件** → 从头提取事件类型，解析 JSON
+5. **路由到处理程序** → 根据事件类型调用适当的处理程序
+6. **格式化消息** → 处理程序格式化人类可读消息
+7. **发送通知** → 执行 C4 通信桥 send 命令
+8. **确认** → 向 GitHub 返回 202（已接受）
 
-### Error Handling Flow
+### 错误处理流
 
-| Error Type | Response | Action |
+| 错误类型 | 响应 | 动作 |
 |------------|----------|--------|
-| Invalid signature | 401 | Log attempt, abort |
-| Duplicate event | 200 | Log duplicate, skip processing |
-| Parse error | 400 | Log error, return generic message |
-| Send failure | 202 (already acked) | Log error, optionally retry |
-| Server error | 500 | Log error, GitHub may retry |
+| 无效签名 | 401 | 记录尝试，中止 |
+| 重复事件 | 200 | 记录重复，跳过处理 |
+| 解析错误 | 400 | 记录错误，返回通用消息 |
+| 发送失败 | 202（已确认） | 记录错误，可选重试 |
+| 服务器错误 | 500 | 记录错误，GitHub 可能重试 |
 
-## Component Boundaries & Interfaces
+## 组件边界和接口
 
-### External Interfaces
+### 外部接口
 
-| Interface | Direction | Protocol | Format |
+| 接口 | 方向 | 协议 | 格式 |
 |-----------|-----------|----------|--------|
-| **Webhook Input** | In | HTTPS POST | JSON (HMAC signed) |
-| **C4 Comm-Bridge** | Out | Process spawn | Stdin JSON |
-| **Config** | Read/Write | File watch | JSON |
+| **Webhook 输入** | 入 | HTTPS POST | JSON（HMAC 签名） |
+| **C4 通信桥** | 出 | 进程生成 | Stdin JSON |
+| **配置** | 读/写 | 文件监视 | JSON |
 
-### Internal Interfaces
+### 内部接口
 
-| Module | Interface | Data Type |
+| 模块 | 接口 | 数据类型 |
 |-------|-----------|-----------|
-| `index.js` → `webhook.js` | Middleware function | (req, reply) |
-| `webhook.js` → `handlers/*` | Handler function | (payload) → String |
-| `handlers/*` → `formatters/*` | Formatter function | (event data) → String |
+| `index.js` → `webhook.js` | 中间件函数 | (req, reply) |
+| `webhook.js` → `handlers/*` | 处理程序函数 | (payload) → String |
+| `handlers/*` → `formatters/*` | 格式化程序函数 | (event data) → String |
 
-## Build Order & Dependencies
+## 构建顺序和依赖
 
 ```
-Phase 1: Foundation
-  ├── src/lib/config.js (no deps)
-  ├── src/lib/verifier.js (crypto only)
-  └── src/lib/deduplication.js (in-memory)
+阶段 1：基础
+  ├── src/lib/config.js（无依赖）
+  ├── src/lib/verifier.js（仅 crypto）
+  └── src/lib/deduplication.js（内存）
 
-Phase 2: Core
-  ├── src/lib/formatters/*.js (no external deps)
-  ├── src/lib/handlers/*.js (depend on formatters)
-  └── src/lib/webhook.js (orchestrate all)
+阶段 2：核心
+  ├── src/lib/formatters/*.js（无外部依赖）
+  ├── src/lib/handlers/*.js（依赖格式化程序）
+  └── src/lib/webhook.js（协调所有）
 
-Phase 3: Integration
-  ├── src/index.js (Fastify setup)
-  ├── scripts/send.js (test interface)
-  └── ecosystem.config.cjs (PM2 config)
+阶段 3：集成
+  ├── src/index.js（Fastify 设置）
+  ├── scripts/send.js（测试接口）
+  └── ecosystem.config.cjs（PM2 配置）
 ```
 
-## Configuration Schema
+## 配置架构
 
 ```json
 {
@@ -239,81 +239,81 @@ Phase 3: Integration
 }
 ```
 
-## Deployment Architecture
+## 部署架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      User's Server                           │
+│                      用户服务器                               │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │  PM2 Process Manager                                   │  │
+│  │  PM2 进程管理器                                   │  │
 │  │  ┌─────────────────────────────────────────────────┐  │  │
 │  │  │  zylos-github-webhook (Node.js)                 │  │  │
-│  │  │  Listening: localhost:3461                      │  │  │
-│  │  │  Config: ~/zylos/components/github-webhook/     │  │  │
+│  │  │  监听：localhost:3461                      │  │  │
+│  │  │  配置：~/zylos/components/github-webhook/     │  │  │
 │  │  └─────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                                             │
-│  Port 3461 exposed to internet (firewall configured)         │
+│  端口 3461 暴露到互联网（配置防火墙）                          │
 └─────────────────────────────────────────────────────────────┘
                           ▲
                           │
                           │ HTTPS
                           │
 ┌─────────────────────────┴─────────────────────────────────────┐
-│                   GitHub Webhook Service                       │
-│  Configured URL: https://user-domain.com:3461/webhook         │
+│                   GitHub Webhook 服务                       │
+│  配置的 URL：https://user-domain.com:3461/webhook         │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-## Security Architecture
+## 安全架构
 
-### Threat Model & Mitigations
+### 威胁模型和缓解措施
 
-| Threat | Mitigation |
+| 威胁 | 缓解措施 |
 |--------|------------|
-| **Forged webhooks** | HMAC-SHA256 signature verification |
-| **Replay attacks** | X-GitHub-Delivery deduplication |
-| **Timing attacks** | Constant-time comparison (timingSafeEqual) |
-| **Secret exposure** | Environment variables, no logging |
-| **Large payloads** | Size limits, quick acknowledgment |
-| **Rate limiting** | Fastify rate-limit plugin |
+| **伪造 webhook** | HMAC-SHA256 签名验证 |
+| **重放攻击** | X-GitHub-Delivery 去重 |
+| **时序攻击** | 常量时间比较（timingSafeEqual） |
+| **Secret 泄露** | 环境变量，不记录日志 |
+| **大负载** | 大小限制，快速确认 |
+| **速率限制** | Fastify 速率限制插件 |
 
-### Defense in Depth
+### 深度防御
 
-1. **Layer 1:** HTTPS (TLS encryption)
-2. **Layer 2:** HMAC signature verification
-3. **Layer 3:** Delivery ID deduplication
-4. **Layer 4:** Rate limiting (optional)
-5. **Layer 5:** Security headers (Helmet)
+1. **第 1 层：** HTTPS（TLS 加密）
+2. **第 2 层：** HMAC 签名验证
+3. **第 3 层：** 传递 ID 去重
+4. **第 4 层：** 速率限制（可选）
+5. **第 5 层：** 安全头（Helmet）
 
-## Scalability Considerations
+## 可扩展性考虑
 
-| Aspect | v1 Approach | v2+ Enhancement |
+| 方面 | v1 方法 | v2+ 增强 |
 |--------|-------------|-----------------|
-| **Horizontal scaling** | Single instance | Multiple instances with shared dedup store |
-| **Deduplication** | In-memory Set | Redis/DynamoDB |
-| **Queue depth** | Async processing | Persistent queue (BullMQ/SQS) |
-| **Monitoring** | File logs | Structured logs + metrics |
+| **水平扩展** | 单实例 | 多实例共享去重存储 |
+| **去重** | 内存 Set | Redis/DynamoDB |
+| **队列深度** | 异步处理 | 持久化队列（BullMQ/SQS） |
+| **监控** | 文件日志 | 结构化日志 + 指标 |
 
-## Observability
+## 可观测性
 
-### Logging Strategy
+### 日志策略
 
-- **Entry point:** Each request with X-GitHub-Delivery ID
-- **Verification:** Signature success/failure
-- **Processing:** Event type, handler called
-- **Delivery:** C4 comm-bridge success/failure
-- **Errors:** Full error context (no secrets)
+- **入口点：** 每个带有 X-GitHub-Delivery ID 的请求
+- **验证：** 签名成功/失败
+- **处理：** 事件类型、调用处理程序
+- **传递：** C4 通信桥成功/失败
+- **错误：** 完整错误上下文（不含 secret）
 
-### Key Metrics
+### 关键指标
 
-- Webhook received count
-- Verification failure rate
-- Duplicate event rate
-- Event type distribution
-- Processing latency (ack time)
-- C4 delivery success rate
+- Webhook 接收计数
+- 验证失败率
+- 重复事件率
+- 事件类型分布
+- 处理延迟（确认时间）
+- C4 传递成功率
 
 ---
 
-**Last Updated:** 2025-05-11 after initial research
+**最后更新：** 2025-05-11 初始研究后
