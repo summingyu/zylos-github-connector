@@ -20,9 +20,9 @@ describe('Deduplication Module', () => {
     clearSeenDeliveries();
   });
 
-  describe('seenDeliveries Set', () => {
-    it('should be an instance of Set', () => {
-      assert.ok(seenDeliveries instanceof Set);
+  describe('seenDeliveries Map', () => {
+    it('should be an instance of Map', () => {
+      assert.ok(seenDeliveries instanceof Map);
     });
 
     it('should start empty', () => {
@@ -38,7 +38,7 @@ describe('Deduplication Module', () => {
 
     it('should return true for seen delivery', () => {
       const deliveryId = '12345678-1234-1234-1234-123456789abc';
-      seenDeliveries.add(deliveryId);
+      seenDeliveries.set(deliveryId, Date.now());
       const result = hasDeliveryBeenSeen(deliveryId);
       assert.equal(result, true);
     });
@@ -73,7 +73,7 @@ describe('Deduplication Module', () => {
 
     it('should not duplicate existing delivery ID and return false', () => {
       const deliveryId = '12345678-1234-1234-1234-123456789abc';
-      seenDeliveries.add(deliveryId);
+      seenDeliveries.set(deliveryId, Date.now());
 
       const result = markDeliveryAsSeen(deliveryId);
 
