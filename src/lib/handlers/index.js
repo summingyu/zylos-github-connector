@@ -1,11 +1,18 @@
 /**
- * Placeholder Handlers
+ * Event Handlers
  *
- * These are temporary placeholder handlers for Phase 3.
- * In Phase 4, these will be replaced with actual event processing logic.
+ * This module exports all event handlers for GitHub webhook events.
+ * Handlers are registered with the router system in src/index.js.
  *
- * Each placeholder handler logs the event and returns a "not implemented" message.
+ * Each handler returns an object with:
+ * - processed: boolean - Whether the event was processed
+ * - message: string - Formatted message or status message
+ * - event: string - Event type
+ * - data: object - Extracted event data
  */
+
+// Export actual issues handler
+export { handleIssues } from './issues.js';
 
 /**
  * Placeholder handler for push events
@@ -24,28 +31,6 @@ export async function handlePush(payload) {
     data: {
       ref: payload.ref || 'unknown',
       repository: payload.repository?.full_name || 'unknown'
-    }
-  };
-}
-
-/**
- * Placeholder handler for issues events
- *
- * @param {Object} payload - Webhook payload
- * @returns {Promise<Object>} Handler result
- */
-export async function handleIssues(payload) {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Invalid payload: expected object');
-  }
-  return {
-    processed: false,
-    message: 'Issues handler not yet implemented',
-    event: 'issues',
-    data: {
-      action: payload.action,
-      issueNumber: payload.issue?.number,
-      title: payload.issue?.title
     }
   };
 }
