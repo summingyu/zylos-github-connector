@@ -204,7 +204,7 @@ function formatIssueMessage(issueData) {
  */
 export async function handleIssues(payload) {
   // Input validation
-  if (!payload || typeof payload !== 'object') {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw new Error('Invalid payload: expected object');
   }
 
