@@ -112,12 +112,7 @@
 
 **Plans:**
 
-- 创建 issues 事件处理程序函数
-- 从负载中提取 issue 数据（标题、作者、动作、URL）
-- 过滤支持的动作（opened、closed、reopened）
-- 格式化包含 issue 详细信息的可读消息
-- 包含可点击的 issue URL
-- 使用示例 issue 事件负载进行测试
+- [ ] 04-01-PLAN.md — 实现 issues 事件处理程序，包含输入验证、动作过滤、标签格式化和消息构建，以及全面的单元测试和集成测试
 
 ---
 
@@ -387,4 +382,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2025-05-11
+**Last Updated:** 2026-05-12 (Phase 4 plan created)
