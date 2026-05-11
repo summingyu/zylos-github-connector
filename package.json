@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test src/lib/__tests__/**/*.test.js",
+    "test:watch": "node --test --watch src/lib/__tests__/**/*.test.js",
+    "test:webhook": "node scripts/test-webhook.js"
   },
   "homepage": "https://github.com/zylos-ai/zylos-github-connector#readme",
   "bugs": {

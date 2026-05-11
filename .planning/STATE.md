@@ -4,20 +4,20 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 2
 status: in-progress
-last_updated: "2026-05-11T16:10:41.000Z"
+last_updated: "2026-05-12T00:10:00.000Z"
 progress:
   total_phases: 12
   completed_phases: 1
-  total_plans: 0
-  completed_plans: 1
+  total_plans: 6
+  completed_plans: 5
 ---
 
 # Project State: Zylos GitHub Webhook Connector
 
 **Initialized:** 2025-05-11
 **Current Phase:** Phase 2
-**Status:** Phase 1 Complete, Phase 2 Plan 4 completed
-**Last Session:** 2026-05-11 Phase 2 Plan 4 execution completed
+**Status:** Phase 1 Complete, Phase 2 Plan 5 completed
+**Last Session:** 2026-05-12 Phase 2 Plan 5 execution completed
 
 ## Project Reference
 
@@ -82,23 +82,23 @@ See: `.planning/PROJECT.md` (updated 2025-05-11)
 - Plan 2: 从配置加载 Webhook Secret — Committed: 49bad32
 - Plan 3: 实现常量时间签名比较 (已集成在 Plan 1) — Committed: e507c4a
 - Plan 4: 集成签名验证到 Webhook 路由 — Committed: 72a02c0
+- Plan 5: 添加验证日志和错误处理 — Committed: 9d744c9
 
-**Plan 4 Accomplishments:**
+**Plan 5 Accomplishments:**
 
-- ✓ 在 src/index.js 中导入 verifySignature 函数
-- ✓ 在 webhook 路由处理程序中提取 X-Hub-Signature-256 头
-- ✓ 调用 verifySignature() 验证签名（使用 req.rawBody）
-- ✓ 无效签名返回 401 Unauthorized
-- ✓ 有效签名返回 202 Accepted
-- ✓ 记录安全警告（不包含 secret）
-- ✓ 创建 scripts/test-webhook.js 集成测试脚本
+- ✓ 增强日志记录（事件类型、传递 ID、签名存在性）
+- ✓ 调试模式日志（签名长度、体大小、格式）
+- ✓ 不记录敏感数据（webhook secret、完整请求体）
+- ✓ 错误处理（捕获异常、配置验证、友好错误消息）
+- ✓ 添加 getSignatureDebugInfo() 辅助函数
+- ✓ 修复 test-webhook.js 负载匹配问题
+- ✓ 所有测试通过（有效签名 202，无效签名 401）
 
 **Plans Remaining:**
 
-- Plan 5: 添加验证日志和错误处理
 - Plan 6: 创建签名验证测试
 
-**Next Step:** Execute Plan 5 - 添加验证日志和错误处理
+**Next Step:** Execute Plan 6 - 创建签名验证测试
 
 ---
 
