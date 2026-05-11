@@ -8,6 +8,7 @@
 import fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
+import { verifySignature } from './lib/verifier.js';
 
 // Initialize
 console.log(`[github-webhook] Starting...`);
@@ -89,19 +90,28 @@ app.get('/health', async (request, reply) => {
 
 // Webhook receiving route
 app.post('/webhook', async (request, reply) => {
-  const { event, delivery } = request.headers;
+  const signature = request.headers['x-hub-signature-256'];
+  const config = getConfig();
 
+  // 验证签名（安全关键：必须在处理前验证）
+  if (!verifySignature(request.rawBody, signature, config.webhookSecret)) {
+    app.log.warn({
+      msg: 'Invalid webhook signature',
+      event: request.headers['x-github-event'],
+      delivery: request.headers['x-github-delivery'],
+      signaturePresent: !!signature
+    });
+    return reply.code(401).send({ error: 'Invalid signature' });
+  }
+
+  // 签名验证成功，继续处理
   app.log.info({
-    msg: 'Webhook received',
+    msg: 'Webhook verified and accepted',
     event: request.headers['x-github-event'],
-    delivery: request.headers['x-github-delivery'],
-    signature: request.headers['x-hub-signature-256'] ? 'present' : 'missing'
+    delivery: request.headers['x-github-delivery']
   });
 
-  return reply.code(202).send({
-    message: 'Webhook received (not yet verified)',
-    note: 'Signature verification will be implemented in Phase 2'
-  });
+  return reply.code(202).send({ message: 'Webhook accepted' });
 });
 
 // Main startup function
