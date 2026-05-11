@@ -14,13 +14,16 @@
  * @returns {Promise<Object>} Handler result
  */
 export async function handlePush(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: 'Push handler not yet implemented',
     event: 'push',
     data: {
-      ref: payload.ref,
-      repository: payload.repository?.full_name
+      ref: payload.ref || 'unknown',
+      repository: payload.repository?.full_name || 'unknown'
     }
   };
 }
@@ -32,6 +35,9 @@ export async function handlePush(payload) {
  * @returns {Promise<Object>} Handler result
  */
 export async function handleIssues(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: 'Issues handler not yet implemented',
@@ -51,6 +57,9 @@ export async function handleIssues(payload) {
  * @returns {Promise<Object>} Handler result
  */
 export async function handleIssueComment(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: 'Issue comment handler not yet implemented',
@@ -70,6 +79,9 @@ export async function handleIssueComment(payload) {
  * @returns {Promise<Object>} Handler result
  */
 export async function handlePullRequest(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: 'Pull request handler not yet implemented',
@@ -89,6 +101,9 @@ export async function handlePullRequest(payload) {
  * @returns {Promise<Object>} Handler result
  */
 export async function handleRelease(payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: 'Release handler not yet implemented',
@@ -109,6 +124,9 @@ export async function handleRelease(payload) {
  * @returns {Promise<Object>} Handler result
  */
 export async function handleUnsupported(eventType, payload) {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Invalid payload: expected object');
+  }
   return {
     processed: false,
     message: `Unsupported event type: ${eventType}`,
