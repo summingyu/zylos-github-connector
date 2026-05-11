@@ -13,7 +13,9 @@
  * Each GitHub webhook delivery has a unique GUID in the X-GitHub-Delivery header.
  * We track these IDs to ensure we don't process the same event twice.
  *
- * @type {Set<string>}
+ * Changed from Set to Map to support TTL-based cleanup (WR-02 fix).
+ *
+ * @type {Map<string, number>}
  *
  * @example
  * // After receiving a webhook
@@ -24,7 +26,7 @@
  *   // Skip processing
  * }
  */
-export const seenDeliveries = new Set();
+export const seenDeliveries = new Map();
 
 /**
  * Checks if a delivery ID has already been processed
@@ -67,7 +69,8 @@ export function markDeliveryAsSeen(deliveryId) {
     return false;
   }
 
-  seenDeliveries.add(deliveryId);
+  // 存储时间戳以支持 TTL 清理
+  seenDeliveries.set(deliveryId, Date.now());
   return true;
 }
 

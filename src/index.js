@@ -9,7 +9,7 @@ import fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
 import { verifySignature } from './lib/verifier.js';
-import { hasDeliveryBeenSeen, markDeliveryAsSeen } from './lib/dedupe.js';
+import { hasDeliveryBeenSeen, markDeliveryAsSeen, seenDeliveries } from './lib/dedupe.js';
 import {
   registerHandler,
   registerWildcardHandler,
@@ -96,6 +96,36 @@ registerHandler('release', handlers.handleRelease);
 registerWildcardHandler(handlers.handleUnsupported);
 
 app.log.info('[github-webhook] Event handlers registered');
+
+// 定期清理旧的去重条目（WR-02 修复）
+// 每 5 分钟清理一次超过 1 小时的条目，防止内存泄漏
+const DEDUPE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 分钟
+const DEDUPE_MAX_AGE = 60 * 60 * 1000; // 1 小时
+
+const dedupeCleanupInterval = setInterval(() => {
+  const now = Date.now();
+  let cleanedCount = 0;
+
+  for (const [id, timestamp] of seenDeliveries.entries()) {
+    if (now - timestamp > DEDUPE_MAX_AGE) {
+      seenDeliveries.delete(id);
+      cleanedCount++;
+    }
+  }
+
+  if (cleanedCount > 0) {
+    app.log.info({
+      msg: 'Dedupe cleanup completed',
+      cleanedCount,
+      remainingCount: seenDeliveries.size
+    });
+  }
+}, DEDUPE_CLEANUP_INTERVAL);
+
+// 在关闭时清除清理定时器
+process.on('beforeExit', () => {
+  clearInterval(dedupeCleanupInterval);
+});
 
 // Health check route
 app.get('/health', async (request, reply) => {
