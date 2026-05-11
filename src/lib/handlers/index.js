@@ -58,7 +58,7 @@ export async function handleIssueComment(payload) {
     data: {
       action: payload.action,
       issueNumber: payload.issue?.number,
-      commentBody: payload.comment?.body?.substring(0, 50) + '...'
+      commentBody: payload.comment?.body ? payload.comment.body.substring(0, 50) + '...' : null
     }
   };
 }
