@@ -53,7 +53,7 @@
 4. 无效签名返回 401 状态
 5. 合法的 GitHub webhook 验证成功
 
-**Requirements:** SECU-01、SECU-02、SECU-04、SECU-05、WEBH-03
+**Requirements:** SECU-01、SECU-02、SECU-03、SECU-04、SECU-05、WEBH-03
 
 **Plans:**
 
