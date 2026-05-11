@@ -1,7 +1,7 @@
 /**
- * Configuration loader for zylos-github-webhook
+ * Configuration loader for zylos-github-connector
  *
- * Loads config from ~/zylos/components/github-webhook/config.json
+ * Loads config from ~/zylos/components/github-connector/config.json
  * with hot-reload support via file watcher.
  */
 
@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 
 const HOME = process.env.HOME;
-export const DATA_DIR = path.join(HOME, 'zylos/components/github-webhook');
+export const DATA_DIR = path.join(HOME, 'zylos/components/github-connector');
 export const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
 
 // Default configuration

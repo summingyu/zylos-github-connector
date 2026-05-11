@@ -81,7 +81,7 @@ fastify.register(fastifyRawBody);
 // ecosystem.config.cjs
 module.exports = {
   apps: [{
-    name: 'zylos-github-webhook',
+    name: 'zylos-github-connector',
     script: 'src/index.js',
     instances: 1,
     autorestart: true,

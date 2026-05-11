@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Post-install hook for zylos-github-webhook
+ * Post-install hook for zylos-github-connector
  *
  * Called by zylos after configure hook and CLI installation.
  * CLI handles: download, npm install, manifest, registration.
@@ -16,14 +16,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const HOME = process.env.HOME;
-const DATA_DIR = path.join(HOME, 'zylos/components/github-webhook');
+const DATA_DIR = path.join(HOME, 'zylos/components/github-connector');
 
 // Minimal initial config - full defaults are in src/lib/config.js
 const INITIAL_CONFIG = {
   enabled: true
 };
 
-console.log('[post-install] Running github-webhook-specific setup...\n');
+console.log('[post-install] Running github-connector-specific setup...\n');
 
 // 1. Create subdirectories
 console.log('Creating subdirectories...');

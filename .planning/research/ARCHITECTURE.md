@@ -21,7 +21,7 @@ GitHub Webhook 连接器遵循 Zylos 通信组件模式，采用**单向流程**
          │
          ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                   zylos-github-webhook                            │
+│                   zylos-github-connector                            │
 │  ┌────────────────────────────────────────────────────────────┐  │
 │  │  1. HTTP 服务器（Fastify）                                  │  │
 │  │     - 原始体捕获（Buffer）                            │  │
@@ -134,7 +134,7 @@ GitHub Webhook 连接器遵循 Zylos 通信组件模式，采用**单向流程**
 
 ### src/lib/config.js（配置）
 
-- 从 `~/zylos/components/github-webhook/config.json` 加载配置
+- 从 `~/zylos/components/github-connector/config.json` 加载配置
 - 通过文件监视器热重载
 - 默认配置值
 
@@ -210,7 +210,7 @@ GitHub Webhook 连接器遵循 Zylos 通信组件模式，采用**单向流程**
 {
   "enabled": true,
   "port": 3461,
-  "webhookSecret": "github-webhook-secret",
+  "webhookSecret": "github-connector-secret",
   "commBridge": {
     "enabled": true,
     "defaultEndpoint": "default"
@@ -247,9 +247,9 @@ GitHub Webhook 连接器遵循 Zylos 通信组件模式，采用**单向流程**
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  PM2 进程管理器                                   │  │
 │  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │  zylos-github-webhook (Node.js)                 │  │  │
+│  │  │  zylos-github-connector (Node.js)                 │  │  │
 │  │  │  监听：localhost:3461                      │  │  │
-│  │  │  配置：~/zylos/components/github-webhook/     │  │  │
+│  │  │  配置：~/zylos/components/github-connector/     │  │  │
 │  │  └─────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                                             │

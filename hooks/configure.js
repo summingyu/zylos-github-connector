@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /**
- * Configure hook for zylos-github-webhook
+ * Configure hook for zylos-github-connector
  *
  * Called by zylos after collecting SKILL.md config.required values.
  * Receives a JSON object on stdin and writes component-owned config.json.
  *
  * Example stdin:
- *   { "GITHUB_WEBHOOK_API_KEY": "secret" }
+ *   { "GITHUB_WEBHOOK_SECRET": "secret" }
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
 const HOME = process.env.HOME;
-const DATA_DIR = path.join(HOME, 'zylos/components/github-webhook');
+const DATA_DIR = path.join(HOME, 'zylos/components/github-connector');
 const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
 const COMPONENT_PREFIX = 'GITHUB_WEBHOOK_';
 

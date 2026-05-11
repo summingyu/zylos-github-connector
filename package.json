@@ -1,5 +1,5 @@
 {
-  "name": "zylos-github-webhook",
+  "name": "zylos-github-connector",
   "version": "0.1.0",
   "description": "GitHub Webhook connector for Zylos AI Agent Platform",
   "type": "module",
@@ -8,17 +8,17 @@
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "homepage": "https://github.com/zylos-ai/zylos-github-webhook#readme",
+  "homepage": "https://github.com/zylos-ai/zylos-github-connector#readme",
   "bugs": {
-    "url": "https://github.com/zylos-ai/zylos-github-webhook/issues"
+    "url": "https://github.com/zylos-ai/zylos-github-connector/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zylos-ai/zylos-github-webhook.git"
+    "url": "git+https://github.com/zylos-ai/zylos-github-connector.git"
   },
   "keywords": [
     "zylos",
-    "github-webhook",
+    "github-connector",
     "agent"
   ],
   "author": "Zylos AI",

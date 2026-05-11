@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * zylos-github-webhook
+ * zylos-github-connector
  *
  * GitHub Webhook connector for Zylos AI Agent Platform
  */

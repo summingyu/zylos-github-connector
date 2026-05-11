@@ -1,8 +1,8 @@
-# zylos-github-webhook Design Document
+# zylos-github-connector Design Document
 
 **Version:** v1.0.0
 **Date:** 2025-05-11
-**Repository:** https://github.com/zylos-ai/zylos-github-webhook
+**Repository:** https://github.com/zylos-ai/zylos-github-connector
 **Status:** Draft
 
 ---
@@ -31,7 +31,7 @@
 ### 2.1 Component Structure
 
 ```
-zylos-github-webhook/
+zylos-github-connector/
   src/
     index.js          — Entry point (startup/shutdown lifecycle)
     lib/

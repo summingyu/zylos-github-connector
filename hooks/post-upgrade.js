@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Post-upgrade hook for zylos-github-webhook
+ * Post-upgrade hook for zylos-github-connector
  *
  * Called by Claude after CLI upgrade completes (zylos upgrade --json).
  * CLI handles: stop service, backup, file sync, npm install, manifest.
@@ -16,10 +16,10 @@ import fs from 'fs';
 import path from 'path';
 
 const HOME = process.env.HOME;
-const DATA_DIR = path.join(HOME, 'zylos/components/github-webhook');
+const DATA_DIR = path.join(HOME, 'zylos/components/github-connector');
 const configPath = path.join(DATA_DIR, 'config.json');
 
-console.log('[post-upgrade] Running github-webhook-specific migrations...\n');
+console.log('[post-upgrade] Running github-connector-specific migrations...\n');
 
 // Config migrations
 if (fs.existsSync(configPath)) {

@@ -112,13 +112,13 @@ reply.code(202).send('accepted');  // 确认！
 
 ## 配置位置
 
-配置文件：`~/zylos/components/github-webhook/config.json`
+配置文件：`~/zylos/components/github-connector/config.json`
 
 ```json
 {
   "enabled": true,
   "port": 3461,
-  "webhookSecret": "github-webhook-secret",
+  "webhookSecret": "github-connector-secret",
   "commBridge": {
     "enabled": true,
     "defaultEndpoint": "default"

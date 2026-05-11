@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * C4 Communication Bridge Interface for zylos-github-webhook
+ * C4 Communication Bridge Interface for zylos-github-connector
  *
  * This file provides the standard interface for Claude to send messages
  * through this communication component.

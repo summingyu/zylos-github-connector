@@ -2,7 +2,7 @@
   <img src="./assets/logo.png" alt="Zylos" height="120">
 </p>
 
-<h1 align="center">zylos-github-webhook</h1>
+<h1 align="center">zylos-github-connector</h1>
 
 <p align="center">
   Zylos AI Agent 平台的 GitHub Webhook 连接器
@@ -37,7 +37,7 @@ Or manually install:
 
 ```bash
 cd ~/zylos/.claude/skills
-git clone https://github.com/zylos-ai/zylos-github-webhook.git github-webhook
+git clone https://github.com/zylos-ai/zylos-github-connector.git github-webhook
 cd github-webhook && npm install
 ```
 
@@ -97,19 +97,19 @@ pm2 start ecosystem.config.cjs
 ### Stop Service
 
 ```bash
-pm2 stop zylos-github-webhook
+pm2 stop zylos-github-connector
 ```
 
 ### View Logs
 
 ```bash
-pm2 logs zylos-github-webhook
+pm2 logs zylos-github-connector
 ```
 
 ### Restart Service
 
 ```bash
-pm2 restart zylos-github-webhook
+pm2 restart zylos-github-connector
 ```
 
 ## Test Message Sending
@@ -140,7 +140,7 @@ node ~/zylos/.claude/skills/github-webhook/scripts/send.js "test-endpoint" "测�
 ## Project Structure
 
 ```
-zylos-github-webhook/
+zylos-github-connector/
 ├── src/
 │   ├── index.js              # Entry point (startup/shutdown lifecycle)
 │   └── lib/                  # Core logic modules
