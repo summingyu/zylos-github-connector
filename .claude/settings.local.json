@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__zread__get_repo_structure",
+      "mcp__web-reader__webReader",
+      "mcp__tavily-remote-mcp__tavily_crawl",
+      "mcp__tavily-remote-mcp__tavily_extract",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "mcp__tavily-remote-mcp__tavily_research"
+    ]
+  }
+}
