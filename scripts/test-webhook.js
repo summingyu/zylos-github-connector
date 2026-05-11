@@ -23,8 +23,9 @@ function computeSignature(payload, secret) {
 /**
  * 发送测试 webhook 请求
  */
-function sendWebhook(signature, event = 'push', delivery = 'test-123') {
-  const payload = JSON.stringify({
+function sendWebhook(signature, event = 'push', delivery = 'test-123', customPayload = null) {
+  // 使用自定义负载或默认负载
+  const payload = customPayload || JSON.stringify({
     action: 'test',
     repository: {
       name: 'test-repo',
@@ -76,10 +77,16 @@ async function runTests() {
 
   // 测试 1: 有效签名
   console.log('测试 1: 有效签名');
-  const validPayload = JSON.stringify({ test: 'data' });
+  const validPayload = JSON.stringify({
+    action: 'test',
+    repository: {
+      name: 'test-repo',
+      owner: { name: 'test-owner' }
+    }
+  });
   const validSignature = computeSignature(validPayload, SECRET);
   try {
-    const result = await sendWebhook(validSignature);
+    const result = await sendWebhook(validSignature, 'push', 'test-123', validPayload);
     console.log(`✓ 状态码: ${result.statusCode}`);
     console.log(`  响应: ${result.body}`);
     console.log(`  预期: 202 Accepted`);
@@ -133,10 +140,16 @@ async function runTests() {
 
   // 测试 5: 使用错误 secret 的签名
   console.log('测试 5: 使用错误 secret 的签名');
-  const wrongSecretPayload = JSON.stringify({ test: 'data' });
+  const wrongSecretPayload = JSON.stringify({
+    action: 'test',
+    repository: {
+      name: 'test-repo',
+      owner: { name: 'test-owner' }
+    }
+  });
   const wrongSignature = computeSignature(wrongSecretPayload, 'wrong-secret');
   try {
-    const result = await sendWebhook(wrongSignature);
+    const result = await sendWebhook(wrongSignature, 'push', 'test-123', wrongSecretPayload);
     console.log(`✓ 状态码: ${result.statusCode}`);
     console.log(`  响应: ${result.body}`);
     console.log(`  预期: 401 Unauthorized`);

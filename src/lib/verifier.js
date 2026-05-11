@@ -39,10 +39,13 @@ export function computeHmac(rawBody, secret) {
  * 使用常量时间比较来防止时序攻击。如果签名无效或格式错误，
  * 该函数将返回 false。
  *
+ * 该函数不会抛出异常 - 所有错误都通过返回 false 处理。
+ *
  * @param {Buffer|string} rawBody - 原始请求体（必须是 Buffer 或字符串）
  * @param {string} signature - 来自 X-Hub-Signature-256 头的签名
  * @param {string} secret - Webhook secret
  * @returns {boolean} 签名是否有效
+ * @throws {Error} 如果参数类型无效或 HMAC 计算失败
  *
  * @example
  * const isValid = verifySignature(
@@ -55,8 +58,26 @@ export function computeHmac(rawBody, secret) {
  * }
  */
 export function verifySignature(rawBody, signature, secret) {
-  // 检查必需参数
+  // 参数类型验证（会抛出异常）
+  if (rawBody !== null && rawBody !== undefined && typeof rawBody !== 'string' && !Buffer.isBuffer(rawBody)) {
+    throw new Error('rawBody must be a string or Buffer');
+  }
+
+  if (signature !== null && signature !== undefined && typeof signature !== 'string') {
+    throw new Error('signature must be a string');
+  }
+
+  if (secret !== null && secret !== undefined && typeof secret !== 'string') {
+    throw new Error('secret must be a string');
+  }
+
+  // 检查必需参数（返回 false，不抛出异常）
   if (!rawBody || !signature || !secret) {
+    return false;
+  }
+
+  // 检查 secret 是否为空字符串
+  if (secret === '') {
     return false;
   }
 
@@ -65,8 +86,13 @@ export function verifySignature(rawBody, signature, secret) {
     return false;
   }
 
-  // 计算期望的签名
-  const expectedSignature = computeHmac(rawBody, secret);
+  // 计算期望的签名（可能抛出异常）
+  let expectedSignature;
+  try {
+    expectedSignature = computeHmac(rawBody, secret);
+  } catch (err) {
+    throw new Error(`HMAC computation failed: ${err.message}`);
+  }
 
   // 使用常量时间比较来防止时序攻击
   // 这比普通的字符串相等比较更安全
@@ -102,4 +128,31 @@ export function extractSignature(signatureHeader) {
   }
 
   return signatureHeader;
+}
+
+/**
+ * 获取签名验证的调试信息（不包含敏感数据）
+ *
+ * 用于日志记录和调试，不会暴露 webhook secret 或签名内容。
+ *
+ * @param {Buffer|string} rawBody - 原始请求体
+ * @param {string} signature - 签名头
+ * @param {string} secret - Webhook secret（仅用于检查存在性）
+ * @returns {Object} 调试信息对象
+ *
+ * @example
+ * const debugInfo = getSignatureDebugInfo(rawBody, signature, secret);
+ * console.log('Signature debug:', debugInfo);
+ * // 输出: { bodySize: 1234, signaturePresent: true, signatureLength: 71, ... }
+ */
+export function getSignatureDebugInfo(rawBody, signature, secret) {
+  return {
+    bodySize: rawBody ? (Buffer.isBuffer(rawBody) ? rawBody.length : Buffer.byteLength(rawBody)) : 0,
+    signaturePresent: !!signature,
+    signatureLength: signature ? signature.length : 0,
+    signatureFormat: signature ? (signature.startsWith('sha256=') ? 'sha256' : 'unknown') : 'missing',
+    secretPresent: !!secret,
+    secretLength: secret ? secret.length : 0,
+    expectedSignatureLength: 71 // 'sha256=' + 64 hex chars
+  };
 }
