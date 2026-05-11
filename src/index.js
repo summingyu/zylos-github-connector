@@ -10,6 +10,12 @@ import helmet from '@fastify/helmet';
 import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
 import { verifySignature } from './lib/verifier.js';
 import { hasDeliveryBeenSeen, markDeliveryAsSeen } from './lib/dedupe.js';
+import {
+  registerHandler,
+  registerWildcardHandler,
+  routeEvent
+} from './lib/router.js';
+import * as handlers from './lib/handlers/index.js';
 
 // Initialize
 console.log(`[github-webhook] Starting...`);
@@ -79,6 +85,16 @@ watchConfig((newConfig) => {
     shutdown();
   }
 });
+
+// Register event handlers (Phase 3)
+registerHandler('push', handlers.handlePush);
+registerHandler('issues', handlers.handleIssues);
+registerHandler('issue_comment', handlers.handleIssueComment);
+registerHandler('pull_request', handlers.handlePullRequest);
+registerHandler('release', handlers.handleRelease);
+registerWildcardHandler(handlers.handleUnsupported);
+
+app.log.info('[github-webhook] Event handlers registered');
 
 // Health check route
 app.get('/health', async (request, reply) => {
@@ -194,11 +210,60 @@ app.post('/webhook', async (request, reply) => {
   // 标记为已处理
   markDeliveryAsSeen(deliveryId);
 
-  return reply.code(202).send({
-    message: 'Webhook accepted',
-    event: eventType,
-    delivery: deliveryId
-  });
+  // 解析 JSON 负载 (已被 Fastify 解析为 request.body)
+  let payload;
+  try {
+    payload = request.body;
+
+    // 调试级别日志（仅开发模式）
+    if (app.log.level === 'debug') {
+      app.log.debug({
+        msg: 'Webhook payload parsed',
+        event: eventType,
+        delivery: deliveryId,
+        payloadKeys: Object.keys(payload)
+      });
+    }
+  } catch (err) {
+    app.log.error({
+      msg: 'Failed to parse webhook payload',
+      event: eventType,
+      delivery: deliveryId,
+      error: err.message
+    });
+    return reply.code(400).send({ error: 'Invalid JSON payload' });
+  }
+
+  // 路由事件到处理程序
+  try {
+    const startTime = Date.now();
+    const routeResult = await routeEvent(eventType, payload);
+    const duration = Date.now() - startTime;
+
+    // 记录路由结果
+    app.log.info({
+      msg: 'Event routed to handler',
+      event: eventType,
+      delivery: deliveryId,
+      handled: routeResult.handled,
+      duration: `${duration}ms`
+    });
+
+    return reply.code(202).send({
+      message: 'Event processed',
+      event: eventType,
+      delivery: deliveryId,
+      handled: routeResult.handled
+    });
+  } catch (err) {
+    app.log.error({
+      msg: 'Handler error',
+      event: eventType,
+      delivery: deliveryId,
+      error: err.message
+    });
+    return reply.code(500).send({ error: 'Handler error' });
+  }
 });
 
 // Main startup function
