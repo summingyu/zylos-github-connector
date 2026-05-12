@@ -216,7 +216,13 @@
 
 ---
 
-## Phase 9: Configuration Management
+## Phase 9: Configuration Management ✅
+
+**Goal:** 实现配置加载和热重载以及默认值。
+
+**Mode:** mvp
+
+**Completed:** 2026-05-12
 
 **Goal:** 实现配置加载和热重载以及默认值。
 
@@ -233,8 +239,8 @@
 
 **Plans:**
 
-- [ ] 09-01-PLAN.md — 重构配置加载器以支持深度默认值合并、配置验证和敏感字段保护
-- [ ] 09-02-PLAN.md — 实现配置文件热重载功能，支持防抖机制和错误恢复
+- [x] 09-01-PLAN.md — 重构配置加载器以支持深度默认值合并、配置验证和敏感字段保护 — Committed: f3c662f
+- [x] 09-02-PLAN.md — 实现配置文件热重载功能，支持防抖机制和错误恢复 — Committed: 45a5c27
 
 ---
 
@@ -261,51 +267,52 @@
 
 ---
 
-## Phase 11: Component Metadata (SKILL.md)
+## Phase 11: Component Metadata (SKILL.md) ✅
 
 **Goal:** 完成包含组件元数据和配置架构的 SKILL.md。
 
 **Mode:** mvp
 
+**Completed:** 2026-05-12
+
 **Success Criteria:**
 
-1. SKILL.md 包含所有必需字段（name、version、type、description）
+1. SKILL.md 包含所有必需字段（name、version、type、description、config）
 2. type 设置为 "communication"
 3. 声明对 comm-bridge 的依赖
-4. config 部分定义 webhook secret 参数
+4. config 部分定义必需的 webhook secret 参数
 
 **Requirements:** META-01、META-02、META-03、META-04
 
 **Plans:**
 
-- [ ] 11-01-PLAN.md — 完善 SKILL.md 组件元数据：添加 dependencies 字段、改进 description 触发模式、添加文档正文依赖说明
+- [x] 11-01-PLAN.md — 完善 SKILL.md 组件元数据：添加 dependencies 字段、改进 description 触发模式、添加文档正文依赖说明 — Committed: (pending)
 
 ---
 
-## Phase 12: Documentation and Testing
+## Phase 12: Documentation and Testing 🔄
 
-**Goal:** 完成包含安装/配置说明的 README 并添加基本测试。
+**Goal:** 更新 README 以反映完整项目状态并验证测试覆盖要求。
 
 **Mode:** mvp
 
+**Status:** Ready to Execute
+
 **Success Criteria:**
 
-1. README 包含安装说明
-2. README 包含配置说明
-3. README 包含 GitHub Webhook 设置说明
-4. 测试覆盖签名验证、事件解析、去重
+1. README 包含安装说明（DOC-01）
+2. README 包含配置说明（端口、secret、端点）（DOC-02）
+3. README 包含 GitHub Webhook 设置说明（URL 配置）（DOC-03）
+4. 组件包含签名验证测试（TEST-01）
+5. 组件包含事件类型解析测试（TEST-02）
+6. 组件包含传递 ID 去重测试（TEST-03）
 
 **Requirements:** DOC-01、DOC-02、DOC-03、TEST-01、TEST-02、TEST-03
 
 **Plans:**
 
-- 编写包含项目描述和概述的 README
-- 记录安装步骤（npm install、PM2 设置）
-- 记录配置（端口、secret、端点）
-- 记录 GitHub Webhook 设置（URL、secret 配置）
-- 创建签名验证测试（有效/无效）
-- 创建事件类型解析测试
-- 创建传递 ID 去重测试
+- [ ] 12-01-PLAN.md — 更新 README.md 反映 Phase 11 完成状态，完善安装、配置、GitHub Webhook 设置说明，添加支持的 GitHub 事件详细说明
+- [ ] 12-02-PLAN.md — 验证测试覆盖满足 TEST-01、TEST-02、TEST-03 要求，更新 README.md 测试部分反映 519+ 测试覆盖
 
 ---
 
@@ -332,7 +339,7 @@ Phase 3 (Event Routing)
                                   ↓
                            Phase 11 (Metadata)
                                   ↓
-                           Phase 12 (Docs/Tests)
+                           Phase 12 (Docs/Tests) 🔄
 ```
 
 ---
@@ -365,4 +372,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2026-05-12 (Phase 11 planned)
+**Last Updated:** 2026-05-12 (Phase 12 planning complete)
