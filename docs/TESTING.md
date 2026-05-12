@@ -5,15 +5,22 @@
 
 ## 测试概述
 
-项目包含 **27 个单元测试**，覆盖签名验证模块的所有核心功能。测试使用 Node.js 内置的测试运行器（`node:test`），无需额外依赖。
+项目包含 **519 个单元测试和集成测试**，覆盖 webhook 处理流程的所有核心功能。测试使用 Node.js 内置的测试运行器（`node:test`），无需额外依赖。
 
 ### 测试覆盖范围
 
-- **签名计算（HMAC-SHA256）**：验证签名的正确性和一致性
-- **签名验证**：有效签名、无效签名、格式错误、边界情况
-- **签名提取**：请求头解析和格式验证
-- **安全性测试**：时序攻击防护、重放攻击防护
-- **边界情况**：大负载、Unicode 字符、特殊字符
+- **签名验证**（27 个测试）：HMAC-SHA256 计算、签名验证、安全性测试、边界情况
+- **事件解析**（22 个测试）：GitHub 事件解析、类型识别、数据提取
+- **去重模块**（20 个测试）：X-GitHub-Delivery 跟踪、重复检测、TTL 清理
+- **C4 通信桥**（15 个测试）：消息发送、重试机制、错误处理
+- **路由器**（18 个测试）：HTTP 路由、健康检查、错误响应
+- **事件处理器**（90+ 个测试）：
+  - Pull Request 处理器（35 个测试）
+  - Issues 处理器（28 个测试）
+  - Release 处理器（22 个测试）
+  - Comment 处理器（15 个测试）
+- **消息格式化**（85 个测试）：各类型事件的格式化输出
+- **集成测试**（242 个测试）：端到端的事件处理流程
 
 ## 运行测试
 
@@ -23,6 +30,17 @@
 
 ```bash
 npm test
+```
+
+**预期输出：**
+
+```
+# tests 519
+# suites 124
+# pass 519
+# fail 0
+# skipped 0
+# duration_ms ~4500
 ```
 
 ### 监听模式
@@ -38,73 +56,186 @@ npm run test:watch
 运行特定的测试文件：
 
 ```bash
+# 签名验证测试
 node --test src/lib/__tests__/verifier.test.js
+
+# 路由器测试
+node --test src/lib/__tests__/router.test.js
+
+# 集成测试
+node --test src/lib/__tests__/integration.test.js
+```
+
+### 按模块运行测试
+
+运行特定模块的所有测试：
+
+```bash
+# 所有去重相关测试
+node --test src/lib/__tests__/dedupe*.test.js
+
+# 所有 Pull Request 相关测试
+node --test src/lib/__tests__/pull-request*.test.js
+
+# 所有 Issues 相关测试
+node --test src/lib/__tests__/issues*.test.js
 ```
 
 ## 集成测试
 
-项目提供了一个完整的集成测试脚本 `scripts/test-webhook.js`，用于测试真实的 HTTP webhook 请求。
+项目包含完整的集成测试套件，测试真实的 HTTP webhook 请求处理流程。
 
-### 运行集成测试
+### HTTP 集成测试
 
-**步骤 1：启动服务器**
-
-```bash
-npm start
-```
-
-服务器将在 `http://localhost:3461` 启动。
-
-**步骤 2：运行集成测试**
-
-在新终端中运行：
+测试 Fastify 服务器的请求处理、响应格式和错误处理。
 
 ```bash
-npm run test:webhook
+node --test src/lib/__tests__/integration.test.js
 ```
 
-### 自定义集成测试配置
+**覆盖范围：**
 
-可以通过环境变量自定义集成测试：
+- ✅ 有效签名的 PUSH 事件（返回 202）
+- ✅ 无效签名的请求（返回 401）
+- ✅ 缺少签名头的请求（返回 401）
+- ✅ 缺少必需头的请求（返回 400）
+- ✅ 健康检查端点（返回 200）
+- ✅ 不存在的路由（返回 404）
+
+### 事件处理器集成测试
+
+测试各类型事件的端到端处理流程：
 
 ```bash
-# 自定义服务器 URL
-SERVER_URL=http://localhost:3461/webhook npm run test:webhook
+# Pull Request 事件集成测试
+node --test src/lib/__tests__/pull-request-integration.test.js
 
-# 自定义 webhook secret
-SECRET=my-custom-secret npm run test:webhook
+# Issues 事件集成测试
+node --test src/lib/__tests__/issues-integration.test.js
 
-# 同时设置多个变量
-SERVER_URL=http://localhost:8080/hook SECRET=test-secret npm run test:webhook
+# Release 事件集成测试
+node --test src/lib/__tests__/release-integration.test.js
+
+# 去重模块集成测试
+node --test src/lib/__tests__/dedupe-integration.test.js
 ```
 
-### 集成测试覆盖范围
+**覆盖场景：**
 
-集成测试包含 **27 个测试用例**，分为 5 个测试组：
+- 事件接收 → 解析 → 验证 → 去重 → 处理 → 格式化 → 发送
+- C4 通信桥集成
+- 错误处理和日志记录
 
-1. **有效签名测试**（5 个测试）
-   - 基本 PUSH 事件
-   - 不同事件类型（pull_request、issues、ping）
+## PM2 集成测试
 
-2. **无效签名测试**（3 个测试）
-   - 随机签名值
-   - 使用错误 secret
-   - 篡改的负载
+项目包含 PM2 进程管理的完整集成测试脚本 `scripts/pm2-test.sh`。
 
-3. **格式错误测试**（4 个测试）
-   - 缺少签名头
-   - 空签名头
-   - 缺少 sha256= 前缀
-   - 长度不正确的签名
+### 运行 PM2 集成测试
 
-4. **边界情况测试**（3 个测试）
-   - 空负载
-   - 大负载（100KB+）
-   - Unicode 字符
+**前提条件：**
 
-5. **HTTP 方法测试**（2 个测试）
-   - GET 请求（应返回 404）
-   - PUT 请求（应返回 404）
+1. 安装 PM2：
+   ```bash
+   npm install -g pm2
+   ```
+
+2. 确保端口 3461 未被占用
+
+**运行测试：**
+
+```bash
+bash scripts/pm2-test.sh
+```
+
+**测试场景：**
+
+1. **启动测试**（test_start）
+   - PM2 进程启动
+   - 进程状态检查（应为 `online`）
+   - 日志文件创建（`logs/error.log`, `logs/out.log`）
+   - HTTP 健康检查端点响应
+
+2. **停止测试**（test_stop）
+   - PM2 进程停止
+   - 进程状态检查（应为 `stopped`）
+   - 优雅关闭日志验证
+   - 资源清理日志验证（定时器清理）
+
+3. **重启测试**（test_restart）
+   - PM2 进程重启
+   - 进程状态检查（应为 `online`）
+   - 重启后 HTTP 端点响应
+
+4. **禁用配置测试**（test_disabled）
+   - 配置文件中 `enabled: false`
+   - 进程应自动退出
+   - 配置恢复后重启
+
+5. **清理**（cleanup）
+   - 删除 PM2 进程
+   - 删除临时配置备份
+
+**预期输出：**
+
+```
+===================================
+   PM2 Integration Test Suite
+===================================
+
+➜ Testing PM2 start...
+✓ PM2 started successfully (status: online)
+✓ Log files created
+✓ Health endpoint responding
+
+➜ Testing PM2 stop...
+✓ PM2 stopped successfully (status: stopped)
+✓ Graceful shutdown logs found
+✓ Resource cleanup logs found
+
+➜ Testing PM2 restart...
+✓ PM2 restarted successfully (status: online)
+✓ Health endpoint responding after restart
+
+➜ Testing disabled configuration...
+✓ Process exited when disabled (status: stopped)
+
+➜ Cleaning up...
+✓ Cleanup complete
+
+===================================
+   All tests passed!
+===================================
+```
+
+### PM2 测试故障排查
+
+**端口占用：**
+
+```bash
+# 查找占用端口的进程
+lsof -i :3461
+
+# 终止进程
+kill -9 <PID>
+```
+
+**PM2 进程已存在：**
+
+```bash
+# 停止并删除现有进程
+pm2 stop zylos-github-connector
+pm2 delete zylos-github-connector
+```
+
+**日志文件问题：**
+
+```bash
+# 创建日志目录
+mkdir -p logs
+
+# 检查日志权限
+ls -la logs/
+```
 
 ## 手动测试
 
@@ -113,12 +244,11 @@ SERVER_URL=http://localhost:8080/hook SECRET=test-secret npm run test:webhook
 **基本测试（有效签名）：**
 
 ```bash
-# 生成签名（需要先安装依赖或使用在线工具）
-# 这里假设 secret 是 'test-webhook-secret'
-
+# 生成签名
 PAYLOAD='{"action":"test","repository":{"name":"test-repo"}}'
 SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "test-webhook-secret" | awk '{print "sha256="$2}')
 
+# 发送请求
 curl -X POST http://localhost:3461/webhook \
   -H "Content-Type: application/json" \
   -H "X-GitHub-Event: push" \
@@ -138,13 +268,11 @@ curl -X POST http://localhost:3461/webhook \
   -d '{"test":"data"}'
 ```
 
-**测试缺少签名头：**
+**测试健康检查：**
 
 ```bash
-curl -X POST http://localhost:3461/webhook \
-  -H "Content-Type: application/json" \
-  -H "X-GitHub-Event: push" \
-  -d '{"test":"data"}'
+curl http://localhost:3461/health
+# 预期输出：{"status":"ok"}
 ```
 
 ### 使用 ngrok 或 smee.io 进行真实 GitHub webhook 测试
@@ -178,20 +306,21 @@ smee client https://smee.io/xxxx http://localhost:3461/webhook
 测试文件应放在 `src/lib/__tests__/` 目录下，命名模式为：
 
 ```
-{module-name}.test.js
+{module-name}.test.js           # 单元测试
+{module-name}-integration.test.js  # 集成测试
 ```
 
 例如：
-- `verifier.test.js`（签名验证模块）
-- `dedupe.test.js`（去重模块）
-- `config.test.js`（配置模块）
+- `verifier.test.js`（签名验证单元测试）
+- `verifier-integration.test.js`（签名验证集成测试）
+- `pull-request-handler.test.js`（PR 处理器单元测试）
 
 ### 测试模板
 
 使用 Node.js 内置测试运行器的标准模板：
 
 ```javascript
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { functionToTest } from '../module.js';
 
@@ -210,6 +339,42 @@ describe('模块名称', () => {
 });
 ```
 
+### 集成测试模板
+
+```javascript
+import { describe, it, before, after } from 'node:test';
+import assert from 'node:assert';
+import { buildServer } from '../../index.js';
+
+describe('模块集成测试', () => {
+  let server;
+
+  before(async () => {
+    server = buildServer();
+    await server.ready();
+  });
+
+  after(async () => {
+    await server.close();
+  });
+
+  it('应该处理完整的请求流程', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/webhook',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-GitHub-Event': 'push',
+        'X-Hub-Signature-256': '...'
+      },
+      body: { /* payload */ }
+    });
+
+    assert.strictEqual(response.statusCode, 202);
+  });
+});
+```
+
 ### 测试最佳实践
 
 1. **使用描述性的测试名称**
@@ -220,12 +385,16 @@ describe('模块名称', () => {
    - ✅ 每个测试只测试一个函数或一个代码路径
    - ❌ 一个测试测试多个不相关的功能
 
-3. **使用 beforeEach 设置共享状态**
+3. **使用 mock 隔离依赖**
    ```javascript
-   import { beforeEach } from 'node:test';
+   import { mock } from 'node:test';
 
-   beforeEach(() => {
-     // 设置测试环境
+   it('应该调用 C4 通信桥', () => {
+     const mockSend = mock.method(commBridge, 'sendToC4', () => ({ success: true }));
+
+     // 执行测试
+
+     assert.strictEqual(mockSend.mock.calls.length, 1);
    });
    ```
 
@@ -238,6 +407,19 @@ describe('模块名称', () => {
 5. **避免依赖外部服务**
    - 使用 mock 而不是真实的 HTTP 请求
    - 使用固定数据而不是随机数据
+
+6. **清理测试状态**
+   ```javascript
+   import { beforeEach, afterEach } from 'node:test';
+
+   beforeEach(() => {
+     // 设置测试环境
+   });
+
+   afterEach(() => {
+     // 清理测试环境
+   });
+   ```
 
 ## 测试覆盖率说明
 
@@ -305,13 +487,29 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: npm install
-      - run: npm test
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run PM2 integration tests
+        run: |
+          npm install -g pm2
+          bash scripts/pm2-test.sh
 ```
 
 ## 故障排查
@@ -336,12 +534,14 @@ npm install
 
 **解决：**
 
+单元测试不需要启动服务器。如果需要运行集成测试：
+
 ```bash
 # 启动服务器
 npm start
 
 # 在另一个终端运行测试
-npm run test:webhook
+npm run test:watch
 ```
 
 ### 签名验证失败
@@ -371,6 +571,28 @@ kill -9 <PID>
 
 # 或使用不同端口
 PORT=3462 npm start
+```
+
+### PM2 测试失败
+
+**错误：** `pm2: command not found`
+
+**原因：** PM2 未安装
+
+**解决：**
+
+```bash
+npm install -g pm2
+```
+
+**错误：** `Log files not found`
+
+**原因：** 日志目录不存在
+
+**解决：**
+
+```bash
+mkdir -p logs
 ```
 
 ## 下一步

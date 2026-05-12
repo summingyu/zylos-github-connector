@@ -9,7 +9,6 @@
 
 - **Node.js** >= 20.0.0（必需）
 - **npm** >= 9.0.0（随 Node.js 自动安装）
-- **PM2** >= 5.0.0（进程管理器，用于生产环境运行）
 
 ### 验证安装
 
@@ -18,14 +17,19 @@
 ```bash
 node --version  # 应该显示 v20.0.0 或更高版本
 npm --version   # 应该显示 9.0.0 或更高版本
-pm2 --version   # 应该显示 5.0.0 或更高版本
 ```
 
-如果 PM2 未安装，请运行：
+### 可选依赖
+
+- **PM2** >= 5.0.0（进程管理器，用于生产环境运行）
+
+如果需要使用 PM2 进行生产环境部署，请运行：
 
 ```bash
 npm install -g pm2
 ```
+
+<!-- VERIFY: PM2 最低版本要求 -->
 
 ## Installation
 
@@ -42,14 +46,17 @@ cd zylos-github-connector
 npm install
 ```
 
-这将安装所有必需的依赖项，包括 Fastify HTTP 框架和安全头中间件。
+这将安装所有必需的依赖项，包括 Fastify HTTP 框架、Helmet 安全头中间件和 raw-body 解析器。
 
-### 3. 创建配置文件
-
-创建配置目录和配置文件：
+### 3. 创建必要的目录结构
 
 ```bash
-mkdir -p ~/zylos/components/github-connector
+mkdir -p ~/zylos/components/github-connector/logs
+```
+
+### 4. 创建配置文件
+
+```bash
 cp config.example.json ~/zylos/components/github-connector/config.json
 ```
 
@@ -78,6 +85,7 @@ cp config.example.json ~/zylos/components/github-connector/config.json
 - **port**: HTTP 服务器监听端口（默认 3461）
 - **webhookSecret**: GitHub webhook 密钥（必需）
 - **commBridge.enabled**: 启用 C4 通信桥集成
+- **commBridge.defaultEndpoint**: 默认通信端点
 - **logging.level**: 日志级别（debug、info、warn、error）
 
 **重要**: `webhookSecret` 必须与您在 GitHub 仓库设置中配置的 webhook secret 完全一致。
@@ -97,7 +105,7 @@ npm start
 ```
 [github-connector] Starting...
 [github-connector] Data directory: /Users/yourname/zylos/components/github-connector
-[github-connector] Config loaded, enabled: true
+[github-connector] Configuration loaded: { port: 3461, logging: 'info', webhookSecret: '[REDACTED]', commBridge: { enabled: true, defaultEndpoint: 'default' } }
 [github-connector] Server listening on http://0.0.0.0:3461
 [github-connector] Max payload size: 10485760
 [github-connector] Ready to receive GitHub webhooks
@@ -143,7 +151,7 @@ curl http://localhost:3461/health
 使用集成的测试脚本验证 webhook 签名验证功能：
 
 ```bash
-SERVER_URL=http://localhost:3461/webhook SECRET=test-webhook-secret npm run test:webhook
+npm run test:webhook
 ```
 
 这将运行全面的测试套件，包括：
@@ -151,6 +159,8 @@ SERVER_URL=http://localhost:3461/webhook SECRET=test-webhook-secret npm run test
 - 无效签名测试
 - 格式错误测试
 - 边界情况测试
+
+测试脚本会向 `http://localhost:3461/webhook` 发送测试请求，使用默认的测试密钥 `test-webhook-secret`。
 
 ### 配置 GitHub Webhook
 
@@ -203,6 +213,7 @@ SERVER_URL=http://localhost:3461/webhook SECRET=test-webhook-secret npm run test
 - 检查 PM2 日志：`pm2 logs zylos-github-connector --lines 50`
 - 确认配置文件路径正确：`~/zylos/components/github-connector/config.json`
 - 验证 `enabled: true` 在配置中设置
+- 检查日志目录是否存在：`ls -la ~/zylos/components/github-connector/logs`
 
 ### 5. 权限错误
 
@@ -216,6 +227,22 @@ mkdir -p ~/zylos/.claude/skills/github-connector
 
 # 设置适当的权限
 chmod -R 755 ~/zylos/components/github-connector
+```
+
+### 6. 配置文件未找到
+
+**问题**: 启动时提示配置文件未找到。
+
+**解决方案**:
+```bash
+# 确保配置目录存在
+mkdir -p ~/zylos/components/github-connector
+
+# 复制示例配置文件
+cp config.example.json ~/zylos/components/github-connector/config.json
+
+# 编辑配置文件
+nano ~/zylos/components/github-connector/config.json
 ```
 
 ## Next Steps
@@ -234,6 +261,7 @@ chmod -R 755 ~/zylos/components/github-connector
 1. 检查日志文件：
    - 开发模式：控制台输出
    - PM2 模式：`pm2 logs zylos-github-connector`
+   - 日志文件：`~/zylos/components/github-connector/logs/`
 
 2. 启用调试日志：
    ```json
@@ -248,4 +276,4 @@ chmod -R 755 ~/zylos/components/github-connector
 
 4. 访问 [GitHub Issues](https://github.com/zylos-ai/zylos-github-connector/issues) 报告问题或查找解决方案
 
-祝您使用愉快！🚀
+祝您使用愉快！

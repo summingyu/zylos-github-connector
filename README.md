@@ -34,6 +34,11 @@ AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 
 - **GitHub 事件接收** — 接收 GitHub Webhook 事件推送
 - **签名验证** — HMAC-SHA256 签名验证确保安全性
+- **事件处理** — 支持 issues、pull_request、issue_comment、release 事件
+- **消息格式化** — 一致的通知格式，包含可点击的 GitHub URL
+- **去重机制** — 基于 X-GitHub-Delivery ID 的内存去重
+- **异步通信** — 通过 C4 通信桥异步传递通知
+- **配置验证** — 深度默认值合并和配置验证
 - **健康检查** — 提供 `/health` 端点用于服务监控
 - **配置热重载** — 配置更改即时生效，无需重启
 - **优雅关闭** — 支持优雅关闭和超时保护
@@ -44,7 +49,7 @@ AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 
 ## 当前状态
 
-**阶段：** Phase 2 已完成 — 签名验证
+**阶段：** Phase 12 已完成 — 项目完成（生产就绪）
 
 **已完成功能：**
 - ✓ Fastify HTTP 服务器
@@ -53,10 +58,44 @@ AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 - ✓ 健康检查和 webhook 路由
 - ✓ 优雅关闭和超时保护
 - ✓ HMAC-SHA256 签名验证
-- ✓ 配置管理和热重载
-- ✓ 完整测试覆盖（27 个单元测试）
+- ✓ 事件路由和去重（X-GitHub-Event、X-GitHub-Delivery）
+- ✓ Issues 事件处理程序（opened、closed、reopened）
+- ✓ Pull Request 事件处理程序（opened、closed、merged、ready_for_review）
+- ✓ Issue Comment 事件处理程序（created）
+- ✓ Release 事件处理程序（published）
+- ✓ 消息格式化模块（一致的格式、可点击 URL）
+- ✓ C4 通信桥集成（异步消息传递）
+- ✓ 配置管理和热重载（深度默认值合并、验证）
+- ✓ PM2 生命周期集成（优雅关闭、进程管理）
+- ✓ 组件元数据（SKILL.md）
+- ✓ 完整测试覆盖（519+ 个测试）
 
-**下一步：** Phase 3 — 事件路由和去重
+**项目状态：** 生产就绪
+
+---
+
+## 支持的 GitHub 事件
+
+### Issues（问题）
+
+- **opened** — 新问题创建
+- **closed** — 问题关闭
+- **reopened** — 问题重新打开
+
+### Pull Requests（拉取请求）
+
+- **opened** — 新 PR 创建
+- **closed** — PR 关闭（未合并）
+- **merged** — PR 合并
+- **ready_for_review** — Draft PR 准备好审查
+
+### Issue Comments（问题评论）
+
+- **created** — 新评论发布
+
+### Releases（发布）
+
+- **published** — 新发布发布
 
 ---
 
@@ -80,6 +119,16 @@ cd github-connector && npm install
 
 - Node.js >= 20.0.0
 - PM2（进程管理）
+
+### 验证安装
+
+```bash
+# 验证安装
+npm test
+
+# 检查配置文件
+cat ~/zylos/components/github-connector/config.json
+```
 
 ---
 
@@ -133,25 +182,35 @@ cd github-connector && npm install
 
 1. 进入 GitHub 仓库设置 → Webhooks → Add webhook
 2. 配置以下选项：
-   - **Payload URL:** `https://your-domain.com:3461/webhook`
+   - **Payload URL:** 见下方示例
    - **Content type:** `application/json`
    - **Secret:** 与配置中的 `webhookSecret` 相同
    - **Events:** 选择需要的事件类型
 
-### 2. 推荐的事件类型
+### 2. Payload URL 配置
+
+**Payload URL 示例：**
+- **本地测试：** `http://localhost:3461/webhook`
+- **生产环境：** `https://your-domain.com:3461/webhook`
+
+**注意：** 确保你的服务器可以从 GitHub 访问（公网 URL 或通过隧道服务如 ngrok）。
+
+### 3. 推荐的事件类型
 
 - **Issues** — 仓库问题（opened、closed、reopened）
-- **Pull Requests** — 拉取请求（opened、closed、merged）
-- **Issue comments** — 问题评论（created）
+- **Pull Requests** — 拉取请求（opened、closed、merged、ready_for_review）
+- **Issue Comments** — 问题评论（created）
 - **Releases** — 发布（published）
 
-### 3. 验证设置
+### 4. 验证设置
 
 发送测试 webhook 确保 202 响应：
 
 ```bash
 # 检查服务状态
 curl http://localhost:3461/health
+
+# 预期响应：{"status":"ok"}
 ```
 
 ---
@@ -211,10 +270,32 @@ npm run test:webhook
 ```
 
 测试覆盖：
-- ✓ 27 个单元测试
-- ✓ 签名验证（有效、无效、格式错误）
-- ✓ 配置加载和热重载
-- ✓ 集成测试（真实 HTTP 请求）
+- ✓ 519+ 个测试（单元测试 + 集成测试）
+- ✓ 签名验证（有效、无效、格式错误、常量时间比较）
+- ✓ 事件类型解析（X-GitHub-Event、X-GitHub-Delivery）
+- ✓ 传递 ID 去重（重复检测、Map 跟踪）
+- ✓ Issues 事件处理（opened、closed、reopened）
+- ✓ Pull Request 事件处理（opened、closed、merged、ready_for_review）
+- ✓ Issue Comment 事件处理（created）
+- ✓ Release 事件处理（published）
+- ✓ 消息格式化（URL 格式化、动作标签）
+- ✓ C4 通信桥集成（消息传递、重试逻辑）
+- ✓ 配置管理（加载、验证、热重载）
+- ✓ 生命周期（PM2 启动/停止、优雅关闭）
+
+测试文件结构：
+```
+src/lib/__tests__/
+├── verifier.test.js          # 签名验证测试
+├── event-parser.test.js      # 事件解析测试
+├── dedupe.test.js            # 去重测试
+├── issues-handler.test.js    # Issues 处理测试
+├── pull-request-handler.test.js  # PR 处理测试
+├── comment-handler.test.js   # Comment 处理测试
+├── release-handler.test.js   # Release 处理测试
+├── comm-bridge.test.js       # 通信桥测试
+└── *.test.js                 # 其他集成测试
+```
 
 ---
 
@@ -227,6 +308,9 @@ zylos-github-connector/
 │   └── lib/
 │       ├── config.js         # 配置加载器（支持热重载）
 │       ├── verifier.js       # HMAC-SHA256 签名验证
+│       ├── handlers/         # 事件处理程序
+│       ├── formatters/       # 消息格式化
+│       ├── comm-bridge.js    # C4 通信桥集成
 │       └── __tests__/        # 单元测试
 ├── scripts/
 │   └── test-webhook.js       # Webhook 测试脚本
@@ -272,16 +356,16 @@ zylos-github-connector/
 
 **Phase 1:** ✓ HTTP 服务器基础
 **Phase 2:** ✓ 签名验证
-**Phase 3:** 事件路由和去重
-**Phase 4:** 事件处理和格式化
-**Phase 5:** C4 通信桥集成
-**Phase 6:** 错误处理和重试
-**Phase 7:** 监控和指标
-**Phase 8:** 性能优化
-**Phase 9:** 文档和测试完善
-**Phase 10:** 生产就绪检查
-**Phase 11:** 部署和运维
-**Phase 12:** MVP 发布
+**Phase 3:** ✓ 事件路由和去重
+**Phase 4:** ✓ Issues 事件处理程序
+**Phase 5:** ✓ Pull Request 事件处理程序
+**Phase 6:** ✓ Comment 和 Release 事件处理程序
+**Phase 7:** ✓ 消息格式化模块
+**Phase 8:** ✓ C4 通信桥集成
+**Phase 9:** ✓ 配置管理
+**Phase 10:** ✓ 生命周期和 PM2 集成
+**Phase 11:** ✓ 组件元数据（SKILL.md）
+**Phase 12:** ✓ 文档和测试验证
 
 查看 `.planning/ROADMAP.md` 了解完整路线图。
 
