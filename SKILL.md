@@ -1,9 +1,13 @@
 ---
 name: github-connector
 version: 0.1.0
-description: >
-  GitHub Webhook 连接器，用于 Zylos AI Agent 平台。当用户需要接收 GitHub 仓库事件通知、
-  通过通信通道发送 GitHub 活动消息、配置 Webhook 设置时使用此组件。
+description: >-
+  GitHub Webhook connector for Zylos AI Agent platform (单向：GitHub → Zylos，通过 webhook 接收事件).
+  Use when: (1) receiving GitHub webhook events (issues, pull requests, comments, releases),
+  (2) sending notifications to configured communication endpoints,
+  (3) configuring webhook secret and server port,
+  (4) troubleshooting webhook signature verification or event delivery.
+  Config at ~/zylos/components/github-connector/config.json. Service: pm2 zylos-github-connector.
 type: communication  # communication | capability | utility
 
 lifecycle:
@@ -50,11 +54,16 @@ config:
       description: 日志级别（debug、info、error）
       default: "info"
 
+dependencies:
+  - comm-bridge
+
 ---
 
 # GitHub Webhook 连接器
 
 Zylos AI Agent 的 GitHub Webhook 连接器组件。
+
+Depends on: comm-bridge (C4 message routing).
 
 ## 功能
 
