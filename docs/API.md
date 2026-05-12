@@ -141,7 +141,7 @@ Webhook secret 通过以下方式配置（优先级从高到低）：
 ```json
 {
   "status": "ok",
-  "service": "github-webhook",
+  "service": "github-connector",
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```

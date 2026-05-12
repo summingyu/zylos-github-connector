@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release. For fresh installation:
 
 ```bash
-zylos add github-webhook
+zylos add github-connector
 ```
 
 No migration required.

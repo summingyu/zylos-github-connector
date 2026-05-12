@@ -88,13 +88,13 @@ GitHub → Webhook POST → Fastify Server
 
 ### 3.2 Configuration File
 
-Located at `~/zylos/components/github-webhook/config.json`:
+Located at `~/zylos/components/github-connector/config.json`:
 
 ```json
 {
   "enabled": true,
   "port": 3461,
-  "webhookSecret": "github-webhook-secret",
+  "webhookSecret": "github-connector-secret",
   "commBridge": {
     "enabled": true,
     "defaultEndpoint": "default"

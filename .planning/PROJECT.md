@@ -44,8 +44,8 @@ AI Agent 实时了解 GitHub 仓库活动，无需轮询。
 技术约束：
 - 必须使用 C4 通信桥发送消息（而非直接 Telegram/其他通道）
 - 在独立端口上运行（非 Caddy 反向代理）
-- 组件配置存储于 `~/zylos/components/github-webhook/config.json`
-- 数据目录位于 `~/zylos/components/github-webhook/`
+- 组件配置存储于 `~/zylos/components/github-connector/config.json`
+- 数据目录位于 `~/zylos/components/github-connector/`
 
 ## Constraints
 

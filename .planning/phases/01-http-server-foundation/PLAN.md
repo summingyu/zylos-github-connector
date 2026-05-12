@@ -55,7 +55,7 @@
    - 创建 fastify 实例，配置 logger（使用 Pino）
    - 定义启动函数 `async function start()`
    - 添加服务器监听，使用配置中的端口（默认 3461）
-   - 添加启动日志：`[github-webhook] Server listening on http://[host]:[port]`
+   - 添加启动日志：`[github-connector] Server listening on http://[host]:[port]`
 
 3. 配置日志选项
    - 使用 Pino logger，级别从配置读取（默认 'info'）
@@ -157,7 +157,7 @@
 
 1. 创建健康检查路由
    - 路由：`GET /health`
-   - 处理程序返回：`{ status: 'ok', service: 'github-webhook' }`
+   - 处理程序返回：`{ status: 'ok', service: 'github-connector' }`
    - 状态码：200
 
 2. 创建 Webhook 接收路由

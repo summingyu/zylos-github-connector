@@ -95,12 +95,12 @@ npm start
 您应该看到类似的输出：
 
 ```
-[github-webhook] Starting...
-[github-webhook] Data directory: /Users/yourname/zylos/components/github-connector
-[github-webhook] Config loaded, enabled: true
-[github-webhook] Server listening on http://0.0.0.0:3461
-[github-webhook] Max payload size: 10485760
-[github-webhook] Ready to receive GitHub webhooks
+[github-connector] Starting...
+[github-connector] Data directory: /Users/yourname/zylos/components/github-connector
+[github-connector] Config loaded, enabled: true
+[github-connector] Server listening on http://0.0.0.0:3461
+[github-connector] Max payload size: 10485760
+[github-connector] Ready to receive GitHub webhooks
 ```
 
 ### 生产模式启动（使用 PM2）
@@ -133,7 +133,7 @@ curl http://localhost:3461/health
 ```json
 {
   "status": "ok",
-  "service": "github-webhook",
+  "service": "github-connector",
   "timestamp": "2024-01-01T12:00:00.000Z"
 }
 ```

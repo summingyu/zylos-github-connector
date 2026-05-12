@@ -55,7 +55,7 @@ Environment variables override configuration file values:
 
 ```json
 {
-  "webhookSecret": "your-github-webhook-secret-here"
+  "webhookSecret": "your-github-connector-secret-here"
 }
 ```
 

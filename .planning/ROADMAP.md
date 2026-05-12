@@ -160,11 +160,13 @@
 
 ---
 
-## Phase 7: Message Formatting Module
+## Phase 7: Message Formatting Module ✅
 
 **Goal:** 集中消息格式化逻辑，确保一致的结构和 URL 处理。
 
 **Mode:** mvp
+
+**Completed:** 2026-05-12
 
 **Success Criteria:**
 
@@ -220,7 +222,7 @@
 
 **Success Criteria:**
 
-1. 配置从 ~/zylos/components/github-webhook/config.json 加载
+1. 配置从 ~/zylos/components/github-connector/config.json 加载
 2. 配置更改通过文件监视器热重载
 3. 为缺失配置应用默认值
 4. Webhook secret、端口和日志级别可配置
@@ -282,7 +284,7 @@
 **Plans:**
 
 - 创建带有组件元数据 frontmatter 的 SKILL.md
-- 设置组件名称（github-webhook）和版本（0.1.0）
+- 设置组件名称（github-connector）和版本（0.1.0）
 - 编写包含触发模式的描述
 - 将 type 设置为 "communication"
 - 声明 comm-bridge 依赖
@@ -373,4 +375,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2026-05-12 (Phase 6 plan created)
+**Last Updated:** 2026-05-12 (Phase 7 completed)

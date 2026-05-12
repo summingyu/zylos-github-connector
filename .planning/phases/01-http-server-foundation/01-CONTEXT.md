@@ -33,9 +33,9 @@
 
 **Patterns:**
 
-- Configuration management: `~/zylos/components/github-webhook/config.json`
-- Log prefix: `[github-webhook]`
-- Data directory: `~/zylos/components/github-webhook/`
+- Configuration management: `~/zylos/components/github-connector/config.json`
+- Log prefix: `[github-connector]`
+- Data directory: `~/zylos/components/github-connector/`
 
 ---
 

@@ -52,7 +52,7 @@
 
 ### Configuration
 
-- [ ] **CONF-01**：组件从 ~/zylos/components/github-webhook/config.json 加载配置
+- [ ] **CONF-01**：组件从 ~/zylos/components/github-connector/config.json 加载配置
 - [ ] **CONF-02**：组件通过文件监视器支持配置更改的热重载
 - [ ] **CONF-03**：可配置的 webhook secret 用于签名验证
 - [ ] **CONF-04**：可配置的服务器端口（默认：3461）

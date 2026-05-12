@@ -19,15 +19,15 @@ import { extractEventMetadata } from './lib/event-parser.js';
 import * as handlers from './lib/handlers/index.js';
 
 // Initialize
-console.log(`[github-webhook] Starting...`);
-console.log(`[github-webhook] Data directory: ${DATA_DIR}`);
+console.log(`[github-connector] Starting...`);
+console.log(`[github-connector] Data directory: ${DATA_DIR}`);
 
 // Load configuration
 let config = getConfig();
-console.log(`[github-webhook] Config loaded, enabled: ${config.enabled}`);
+console.log(`[github-connector] Config loaded, enabled: ${config.enabled}`);
 
 if (!config.enabled) {
-  console.log(`[github-webhook] Component disabled in config, exiting.`);
+  console.log(`[github-connector] Component disabled in config, exiting.`);
   process.exit(0);
 }
 
@@ -79,10 +79,10 @@ app.addContentTypeParser('application/json', { parseAs: 'buffer' },
 
 // Watch for config changes
 watchConfig((newConfig) => {
-  app.log.info(`[github-webhook] Config reloaded`);
+  app.log.info(`[github-connector] Config reloaded`);
   config = newConfig;
   if (!newConfig.enabled) {
-    app.log.info(`[github-webhook] Component disabled, stopping...`);
+    app.log.info(`[github-connector] Component disabled, stopping...`);
     shutdown();
   }
 });
@@ -95,7 +95,7 @@ registerHandler('pull_request', handlers.handlePullRequest);
 registerHandler('release', handlers.handleRelease);
 registerWildcardHandler(handlers.handleUnsupported);
 
-app.log.info('[github-webhook] Event handlers registered');
+app.log.info('[github-connector] Event handlers registered');
 
 // 定期清理旧的去重条目（WR-02 修复）
 // 每 5 分钟清理一次超过 1 小时的条目，防止内存泄漏
@@ -131,7 +131,7 @@ process.on('beforeExit', () => {
 app.get('/health', async (request, reply) => {
   return {
     status: 'ok',
-    service: 'github-webhook',
+    service: 'github-connector',
     timestamp: new Date().toISOString()
   };
 });
@@ -305,11 +305,11 @@ async function start() {
 
     await app.listen({ port, host });
 
-    app.log.info(`[github-webhook] Server listening on http://${host}:${port}`);
-    app.log.info(`[github-webhook] Max payload size: ${maxPayloadSize}`);
-    app.log.info(`[github-webhook] Ready to receive GitHub webhooks`);
+    app.log.info(`[github-connector] Server listening on http://${host}:${port}`);
+    app.log.info(`[github-connector] Max payload size: ${maxPayloadSize}`);
+    app.log.info(`[github-connector] Ready to receive GitHub webhooks`);
   } catch (err) {
-    app.log.error(`[github-webhook] Failed to start server: ${err.message}`);
+    app.log.error(`[github-connector] Failed to start server: ${err.message}`);
     process.exit(1);
   }
 }
@@ -323,20 +323,20 @@ async function shutdown() {
   }
   isShuttingDown = true;
 
-  app.log.info(`[github-webhook] Shutting down...`);
+  app.log.info(`[github-connector] Shutting down...`);
 
   // Force exit after 10 seconds if graceful shutdown fails
   const timeout = setTimeout(() => {
-    app.log.warn(`[github-webhook] Shutdown timeout, forcing exit`);
+    app.log.warn(`[github-connector] Shutdown timeout, forcing exit`);
     process.exit(1);
   }, 10000);
 
   try {
     await app.close();
-    app.log.info(`[github-webhook] Server closed gracefully`);
+    app.log.info(`[github-connector] Server closed gracefully`);
     clearTimeout(timeout);
   } catch (err) {
-    app.log.error(`[github-webhook] Error during shutdown: ${err.message}`);
+    app.log.error(`[github-connector] Error during shutdown: ${err.message}`);
   }
 
   process.exit(0);
@@ -344,29 +344,29 @@ async function shutdown() {
 
 // Signal handlers
 process.on('SIGINT', () => {
-  app.log.info(`[github-webhook] Received SIGINT`);
+  app.log.info(`[github-connector] Received SIGINT`);
   shutdown();
 });
 
 process.on('SIGTERM', () => {
-  app.log.info(`[github-webhook] Received SIGTERM`);
+  app.log.info(`[github-connector] Received SIGTERM`);
   shutdown();
 });
 
 // Uncaught exception handler
 process.on('uncaughtException', (err) => {
-  app.log.error(`[github-webhook] Uncaught exception: ${err.message}`);
+  app.log.error(`[github-connector] Uncaught exception: ${err.message}`);
   app.log.error(err.stack);
   shutdown();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  app.log.error(`[github-webhook] Unhandled rejection at ${promise}: ${reason}`);
+  app.log.error(`[github-connector] Unhandled rejection at ${promise}: ${reason}`);
   shutdown();
 });
 
 // Start the server
 start().catch(err => {
-  console.error(`[github-webhook] Fatal error:`, err);
+  console.error(`[github-connector] Fatal error:`, err);
   process.exit(1);
 });

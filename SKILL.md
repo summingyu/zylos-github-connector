@@ -1,5 +1,5 @@
 ---
-name: github-webhook
+name: github-connector
 version: 0.1.0
 description: >
   GitHub Webhook 连接器，用于 Zylos AI Agent 平台。当用户需要接收 GitHub 仓库事件通知、
@@ -99,7 +99,7 @@ Zylos AI Agent 的 GitHub Webhook 连接器组件。
 通过 C4 桥接（始终使用 stdin 格式）：
 
 ```bash
-cat <<'EOF' | node ~/zylos/.claude/skills/comm-bridge/scripts/c4-send.js "github-webhook" ""
+cat <<'EOF' | node ~/zylos/.claude/skills/comm-bridge/scripts/c4-send.js "github-connector" ""
 测试消息
 EOF
 ```

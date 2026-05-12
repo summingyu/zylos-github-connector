@@ -134,7 +134,7 @@ if (routed.handled && routed.result?.message) {
   // 发送到 C4（带超时和错误处理）
   const result = await sendToC4('github', repo, message, 3000);
   if (!result.ok) {
-    console.error(`[github-webhook] C4 send failed: ${result.error}`);
+    console.error(`[github-connector] C4 send failed: ${result.error}`);
   }
 }
 

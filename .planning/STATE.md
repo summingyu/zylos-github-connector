@@ -227,7 +227,7 @@ None - Phase 6 Complete
 | `.planning/ROADMAP.md` | Phase breakdown and dependencies |
 | `.planning/STATE.md` | This file - project state |
 | `src/index.js` | Main server implementation |
-| `~/zylos/components/github-webhook/config.json` | Runtime configuration |
+| `~/zylos/components/github-connector/config.json` | Runtime configuration |
 
 ### Configuration
 
