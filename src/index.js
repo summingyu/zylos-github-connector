@@ -17,6 +17,7 @@ import {
 } from './lib/router.js';
 import { extractEventMetadata } from './lib/event-parser.js';
 import * as handlers from './lib/handlers/index.js';
+import { sendWithRetry } from './lib/comm-bridge.js';
 
 // Initialize
 console.log(`[github-connector] Starting...`);
@@ -279,6 +280,57 @@ app.post('/webhook', async (request, reply) => {
       handled: routeResult.handled,
       duration: `${duration}ms`
     });
+
+    // 发送消息到 C4 通信桥
+    if (routeResult.handled && routeResult.result?.message) {
+      const { message } = routeResult.result;
+      const repo = payload.repository?.full_name || config.commBridge?.defaultEndpoint || 'unknown';
+
+      // 验证消息格式
+      if (typeof message !== 'string' || message.length === 0) {
+        app.log.warn({
+          msg: 'Invalid message format for C4 delivery',
+          event: eventType,
+          delivery: deliveryId,
+          messageType: typeof message
+        });
+      } else {
+        // 发送到 C4（异步，不阻塞 webhook 响应）
+        // TODO: Register github channel in C4 and change back to 'github'
+        sendWithRetry('system', repo, message)
+          .then(result => {
+            if (result.ok) {
+              const messagePreview = message.length > 60
+                ? `${message.substring(0, 60)}...`
+                : message;
+              app.log.info({
+                msg: 'Sent to C4 successfully',
+                endpoint: repo,
+                message: messagePreview
+              });
+            } else {
+              app.log.error({
+                msg: 'C4 send failed',
+                endpoint: repo,
+                error: result.error
+              });
+            }
+          })
+          .catch(err => {
+            app.log.error({
+              msg: 'C4 send error',
+              endpoint: repo,
+              error: err.message
+            });
+          });
+      }
+    } else if (routeResult.handled && !routeResult.result?.message) {
+      app.log.warn({
+        msg: 'No message in router result for C4 delivery',
+        event: eventType,
+        delivery: deliveryId
+      });
+    }
 
     return reply.code(202).send({
       message: 'Event processed',
