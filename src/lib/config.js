@@ -30,6 +30,7 @@ export const DEFAULT_CONFIG = {
 
 let config = null;
 let configWatcher = null;
+let debounceTimer = null;
 
 /**
  * Deep merge default configuration with user configuration
@@ -200,7 +201,7 @@ export async function saveConfig(newConfig) {
 
 /**
  * Start watching config file for changes
- * @param {Function} onChange - Callback when config changes
+ * @param {Function} onChange - Callback when config changes (receives newConfig, oldConfig)
  */
 export function watchConfig(onChange) {
   if (configWatcher) {
@@ -212,26 +213,49 @@ export function watchConfig(onChange) {
 
   if (fsSync.existsSync(CONFIG_PATH)) {
     configWatcher = fsSync.watch(CONFIG_PATH, (eventType) => {
-      if (eventType === 'change') {
-        console.log('[github-connector] Config file changed, reloading...');
-        loadConfig().then(newConfig => {
-          if (onChange) {
-            onChange(newConfig);
-          }
-        }).catch(err => {
-          console.error(`[github-connector] Failed to reload config: ${err.message}`);
-        });
+      // macOS may trigger 'rename', Linux/Windows typically trigger 'change'
+      // Don't rely on event type, rely on debouncing
+      if (eventType !== 'change' && eventType !== 'rename') {
+        return;
       }
+
+      // Debounce: clear previous timer
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      // Set new timer
+      debounceTimer = setTimeout(async () => {
+        try {
+          const oldConfig = config;
+          const newConfig = await loadConfig();
+          console.log('[github-connector] Configuration reloaded successfully');
+          if (onChange) {
+            onChange(newConfig, oldConfig);
+          }
+        } catch (error) {
+          console.error('[github-connector] Failed to reload configuration:', error.message);
+          // Keep old config valid on error
+        }
+        debounceTimer = null;
+      }, 500);
     });
+
+    console.log(`[github-connector] Watching config file: ${CONFIG_PATH}`);
   }
 }
 
 /**
- * Stop watching config file
+ * Stop watching config file and cleanup resources
  */
 export function stopWatching() {
   if (configWatcher) {
     configWatcher.close();
     configWatcher = null;
+    console.log('[github-connector] Stopped watching config file');
+  }
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
   }
 }
