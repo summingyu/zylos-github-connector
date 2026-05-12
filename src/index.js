@@ -114,6 +114,7 @@ watchConfig((newConfig, oldConfig) => {
 
 // Register event handlers (Phase 3)
 registerHandler('push', handlers.handlePush);
+registerHandler('ping', handlers.handlePing);
 registerHandler('issues', handlers.handleIssues);
 registerHandler('issue_comment', handlers.handleIssueComment);
 registerHandler('pull_request', handlers.handlePullRequest);

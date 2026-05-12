@@ -35,6 +35,9 @@ export const ACTION_LABELS = {
   release: {
     published: '🚀 Release Published',
     created: '🚀 Release Created'
+  },
+  push: {
+    default: '⬆️ Push'
   }
 };
 

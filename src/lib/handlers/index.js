@@ -16,27 +16,8 @@ export { handleIssues } from './issues.js';
 export { handlePullRequest } from './pull-request.js';
 export { handleIssueComment } from './comment.js';
 export { handleRelease } from './release.js';
-
-/**
- * Placeholder handler for push events
- *
- * @param {Object} payload - Webhook payload
- * @returns {Promise<Object>} Handler result
- */
-export async function handlePush(payload) {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Invalid payload: expected object');
-  }
-  return {
-    processed: false,
-    message: 'Push handler not yet implemented',
-    event: 'push',
-    data: {
-      ref: payload.ref || 'unknown',
-      repository: payload.repository?.full_name || 'unknown'
-    }
-  };
-}
+export { handlePush } from './push.js';
+export { handlePing } from './ping.js';
 
 /**
  * Default wildcard handler for unsupported events
