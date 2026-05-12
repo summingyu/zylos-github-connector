@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 
 const HOME = process.env.HOME;
@@ -207,9 +208,6 @@ export function watchConfig(onChange) {
   if (configWatcher) {
     configWatcher.close();
   }
-
-  // Use synchronous fs.watch for file watching
-  const fsSync = require('fs');
 
   if (fsSync.existsSync(CONFIG_PATH)) {
     configWatcher = fsSync.watch(CONFIG_PATH, (eventType) => {
