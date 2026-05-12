@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "port": 3461,
+  "webhookSecret": "test-secret-key-12345678",
+  "commBridge": {
+    "enabled": true,
+    "defaultEndpoint": "default"
+  },
+  "logging": {
+    "level": "info"
+  },
+  "maxPayloadSize": "10mb"
+}
