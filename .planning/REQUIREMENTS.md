@@ -60,10 +60,10 @@
 
 ### Component Lifecycle
 
-- [ ] **LIFE-01**：组件可以通过 PM2 启动和停止
-- [ ] **LIFE-02**：组件在 SIGINT/SIGTERM 信号上实现优雅关闭
-- [ ] **LIFE-03**：ecosystem.config.cjs 定义 PM2 服务配置
-- [ ] **LIFE-04**：组件遵守配置中的启用标志（如果禁用则退出）
+- [x] **LIFE-01**：组件可以通过 PM2 启动和停止
+- [x] **LIFE-02**：组件在 SIGINT/SIGTERM 信号上实现优雅关闭
+- [x] **LIFE-03**：ecosystem.config.cjs 定义 PM2 服务配置
+- [x] **LIFE-04**：组件遵守配置中的启用标志（如果禁用则退出）
 
 ### Component Metadata
 

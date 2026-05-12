@@ -244,6 +244,8 @@
 
 **Mode:** mvp
 
+**Status:** 📋 Planning Complete (2026-05-12)
+
 **Success Criteria:**
 
 1. 组件通过 PM2 启动和停止
@@ -255,12 +257,7 @@
 
 **Plans:**
 
-- 为 PM2 创建 ecosystem.config.cjs
-- 在启动时实现启用标志检查
-- 为活动连接添加优雅关闭
-- 配置 PM2 重启和内存限制
-- 测试 PM2 启动、重启、停止操作
-- 验证组件在禁用时退出
+- [x] 10-01-PLAN.md — 修复 PM2 配置路径、验证优雅关闭、创建集成测试和测试脚本
 
 ---
 
@@ -373,4 +370,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2026-05-12 (Phase 9 planning complete)
+**Last Updated:** 2026-05-12 (Phase 10 planning complete)
