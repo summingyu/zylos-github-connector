@@ -112,7 +112,7 @@
 
 **Plans:**
 
-- [ ] 04-01-PLAN.md — 实现 issues 事件处理程序，包含输入验证、动作过滤、标签格式化和消息构建，以及全面的单元测试和集成测试
+- [x] 04-01-PLAN.md — 实现 issues 事件处理程序，包含输入验证、动作过滤、标签格式化和消息构建，以及全面的单元测试和集成测试
 
 ---
 
@@ -133,12 +133,7 @@
 
 **Plans:**
 
-- 创建 pull_request 事件处理程序函数
-- 从负载中提取 PR 数据（标题、作者、动作、合并状态、URL）
-- 过滤支持的动作（opened、closed、merged、ready_for_review）
-- 格式化包含 PR 详细信息和合并状态的可读消息
-- 包含可点击的 PR URL
-- 使用示例 PR 事件负载进行测试（包括合并状态）
+- [x] 05-01-PLAN.md — 创建 pull_request 事件处理程序函数，包含完整的单元测试和集成测试
 
 ---
 
@@ -155,17 +150,11 @@
 3. 评论通知包括作者、上下文、正文预览
 4. 发布通知包括标签、名称、作者、资源
 
-**Requirements:** COMM-01、COMM-02、REL-01、REL-02、FMT-01
+**Requirements:** COMM-01、COMM-02、REL-01、REL-02、FMT-01、FMT-02、FMT-03
 
 **Plans:**
 
-- 创建 issue_comment 事件处理程序函数
-- 提取评论数据（作者、正文、issue/PR 上下文）
-- 格式化包含上下文预览的评论通知
-- 创建 release 事件处理程序函数
-- 提取发布数据（标签、名称、作者、资源）
-- 格式化包含资源信息的发布通知
-- 使用示例评论和发布事件负载进行测试
+- [ ] 06-01-PLAN.md — 实现 issue_comment 和 release 事件处理程序，包含输入验证、动作过滤、消息格式化和全面的测试覆盖
 
 ---
 
@@ -382,4 +371,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2026-05-12 (Phase 4 plan created)
+**Last Updated:** 2026-05-12 (Phase 6 plan created)
