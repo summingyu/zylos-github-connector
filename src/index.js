@@ -408,6 +408,10 @@ async function shutdown() {
   }, 10000);
 
   try {
+    // Stop dedupe cleanup interval
+    clearInterval(dedupeCleanupInterval);
+    app.log.info('[github-connector] Stopped dedupe cleanup interval');
+
     // Stop watching config file
     stopWatching();
     app.log.info('[github-connector] Stopped watching configuration file');
