@@ -7,6 +7,9 @@
  * @module handlers/issues
  */
 
+// Import centralized formatters
+import { buildBaseMessage, addLine, addUrl, finalize, getActionLabel, formatLabels } from '../formatters/index.js';
+
 // Logger will be passed from the main app via Fastify's app.log
 // For now, we use console for warnings (will be integrated with app.log in main flow)
 const logger = {
@@ -23,109 +26,10 @@ const logger = {
 const SUPPORTED_ACTIONS = new Set(['opened', 'closed', 'reopened', 'deleted']);
 
 /**
- * Action label mapping for message formatting
- *
- * Maps action types to their display labels with emojis.
- *
- * @type {Object<string, string>}
- */
-const ACTION_LABELS = {
-  opened: '🔓 Issue Opened',
-  closed: '🔒 Issue Closed',
-  reopened: '♻️ Issue Reopened',
-  deleted: '🗑️ Issue Deleted'
-};
-
-/**
- * Color to emoji mapping for issue labels
- *
- * Maps GitHub label colors to emoji dots.
- *
- * @type {Object<string, string>}
- */
-const COLOR_EMOJI_MAP = {
-  'd73a4a': '🔴',  // red
-  'a2eeef': '🔵',  // blue
-  '7057ff': '🟣',  // purple
-  '008672': '🟢',  // green
-  'd4c5f9': '🟣',  // purple (light)
-  'e99695': '🔴',  // red (light)
-  '9e9a9d': '⚪',  // gray
-  'fbca04': '🟡',  // yellow
-  'ff7b72': '🔴',  // red (bright)
-  'ffffd0': '🟡',  // yellow (light)
-  '0075ca': '🔵',  // blue (dark)
-  'cfd3d7': '⚪',  // gray (light)
-  'bfd4f2': '🔵',  // blue (light)
-  'fef2c0': '🟡',  // yellow (dark)
-  'ffffff': '⚪',  // white
-  'f1e2a7': '🟡',  // yellow (warm)
-  'f2f0fa': '⚪',  // gray (very light)
-  '5319e7': '🟣',  // purple (dark)
-  'b60205': '🔴',  // red (dark)
-  '0e8a16': '🟢',  // green (dark)
-  '3f161e': '🩷',  // pink (dark)
-  'fef6c4': '🟡',  // yellow (pale)
-  'ededed': '⚪',  // gray (medium)
-  'fcdfd3': '🟠',  // orange (light)
-  'bfdadc': '🔵',  // blue (cyan)
-  '000000': '⚫',  // black
-  'ffeda3': '🟡',  // yellow (bright)
-  'c5def5': '🔵'   // blue (sky)
-};
-
-// Freeze COLOR_EMOJI_MAP to prevent prototype pollution (CR-01)
-Object.freeze(COLOR_EMOJI_MAP);
-
-/**
- * Maps a hex color code to an emoji dot
- *
- * @param {string} color - 6-character hex color code
- * @returns {string} Emoji representing the color
- *
- * @example
- * getEmojiForColor('d73a4a') // Returns '🔴'
- */
-function getEmojiForColor(color) {
-  if (!color || typeof color !== 'string') {
-    return '⚫';
-  }
-
-  // Normalize color to lowercase
-  const normalizedColor = color.toLowerCase().trim();
-
-  // Return mapped emoji or default black dot
-  return COLOR_EMOJI_MAP[normalizedColor] || '⚫';
-}
-
-/**
- * Formats issue labels into a string with emoji dots
- *
- * @param {Array<Object>} labels - Array of label objects with name and color
- * @returns {string} Formatted label string or empty string if no labels
- *
- * @example
- * formatLabels([{ name: 'bug', color: 'd73a4a' }])
- * // Returns '🔴 bug'
- */
-function formatLabels(labels) {
-  if (!Array.isArray(labels) || labels.length === 0) {
-    return '';
-  }
-
-  return labels.map(label => {
-    // Validate label object structure (CR-02)
-    if (!label || typeof label !== 'object') {
-      return '⚫ unknown';
-    }
-    const emoji = getEmojiForColor(label?.color);
-    const name = label?.name || 'unknown';
-    return `${emoji} ${name}`;
-  }).join(' ');
-}
-
-/**
  * Formats an issue event into a readable message
+ *
+ * Uses centralized formatters for consistent message structure.
+ * Action labels are obtained via getActionLabel from the formatters module.
  *
  * @param {Object} issueData - Extracted issue data
  * @param {string} issueData.action - The action performed
@@ -150,32 +54,29 @@ function formatLabels(labels) {
 function formatIssueMessage(issueData) {
   const { action, title, number, sender, htmlUrl, labels } = issueData;
 
-  // Get action label
-  const actionLabel = ACTION_LABELS[action] || `Issue ${action}`;
+  // Get action label from centralized mapping
+  const actionLabel = getActionLabel('issues', action);
 
-  // Build message lines
-  const lines = [];
+  // Build message using centralized formatters
+  const builder = buildBaseMessage(sender, actionLabel);
 
-  // Line 1: Action label with sender
-  lines.push(`${actionLabel} by @${sender}`);
-
-  // Line 2: Labels (skip for deleted action per D-06)
+  // Add labels (skip for deleted action per D-06)
   if (action !== 'deleted') {
     const labelLine = formatLabels(labels);
     if (labelLine) {
-      lines.push(labelLine);
+      addLine(builder, labelLine);
     }
   }
 
-  // Line 3: Issue information (always included)
-  lines.push(`#${number}: ${title}`);
+  // Add issue information
+  addLine(builder, `#${number}: ${title}`);
 
-  // Line 4: URL (only if number is not null)
+  // Add URL (only if number is not null, per original logic)
   if (number !== null && htmlUrl) {
-    lines.push(`🔗 ${htmlUrl}`);
+    addUrl(builder, htmlUrl);
   }
 
-  return lines.join('\n');
+  return finalize(builder);
 }
 
 /**
@@ -289,6 +190,3 @@ export async function handleIssues(payload) {
     }
   };
 }
-
-// Export reusable utilities for use in other handlers
-export { COLOR_EMOJI_MAP, formatLabels };
