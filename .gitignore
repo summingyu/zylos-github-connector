@@ -130,4 +130,5 @@ logs/
 .pm2/
 
 # Claude Code
+.claude/settings.local.json
 .claude/
