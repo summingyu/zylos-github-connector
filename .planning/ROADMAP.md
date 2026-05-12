@@ -137,11 +137,13 @@
 
 ---
 
-## Phase 6: Comment and Release Event Handlers
+## Phase 6: Comment and Release Event Handlers ✅
 
 **Goal:** 处理 issue_comment 和 release 事件并格式化通知。
 
 **Mode:** mvp
+
+**Completed:** 2026-05-12
 
 **Success Criteria:**
 
@@ -154,7 +156,7 @@
 
 **Plans:**
 
-- [ ] 06-01-PLAN.md — 实现 issue_comment 和 release 事件处理程序，包含输入验证、动作过滤、消息格式化和全面的测试覆盖
+- [x] 06-01-PLAN.md — 实现 issue_comment 和 release 事件处理程序，包含输入验证、动作过滤、消息格式化和全面的测试覆盖 (1/1 plans complete)
 
 ---
 
