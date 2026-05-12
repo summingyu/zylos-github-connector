@@ -7,7 +7,7 @@
 
 import fastify from 'fastify';
 import helmet from '@fastify/helmet';
-import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG, sanitizeForLogging } from './lib/config.js';
+import { getConfig, watchConfig, stopWatching, DATA_DIR, DEFAULT_CONFIG, sanitizeForLogging } from './lib/config.js';
 import { verifySignature } from './lib/verifier.js';
 import { hasDeliveryBeenSeen, markDeliveryAsSeen, seenDeliveries } from './lib/dedupe.js';
 import {
@@ -91,11 +91,23 @@ app.addContentTypeParser('application/json', { parseAs: 'buffer' },
 );
 
 // Watch for config changes
-watchConfig((newConfig) => {
-  app.log.info(`[github-connector] Config reloaded`);
+watchConfig((newConfig, oldConfig) => {
+  app.log.info('[github-connector] Configuration reloaded');
   config = newConfig;
+
+  // Check for port changes
+  if (newConfig.port !== oldConfig?.port) {
+    app.log.warn(`[github-connector] Port changed from ${oldConfig?.port || 'unknown'} to ${newConfig.port}. Restart the application to apply.`);
+  }
+
+  // Update log level
+  if (newConfig.logging?.level !== oldConfig?.logging?.level) {
+    app.log.info(`[github-connector] Log level changed to ${newConfig.logging.level}`);
+  }
+
+  // Check if component is disabled
   if (!newConfig.enabled) {
-    app.log.info(`[github-connector] Component disabled, stopping...`);
+    app.log.info('[github-connector] Component disabled in config, stopping...');
     shutdown();
   }
 });
@@ -396,8 +408,12 @@ async function shutdown() {
   }, 10000);
 
   try {
+    // Stop watching config file
+    stopWatching();
+    app.log.info('[github-connector] Stopped watching configuration file');
+
     await app.close();
-    app.log.info(`[github-connector] Server closed gracefully`);
+    app.log.info('[github-connector] Server closed gracefully');
     clearTimeout(timeout);
   } catch (err) {
     app.log.error(`[github-connector] Error during shutdown: ${err.message}`);
