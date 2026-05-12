@@ -77,12 +77,13 @@ function formatBranchInfo(prData) {
  * // Returns 'merged_by: @alice · abcdef1'
  */
 function formatMergerInfo(prData) {
-  if (!prData.merged_by || !prData.merge_commit_sha) {
+  if (!prData.merged_by?.login || !prData.merge_commit_sha) {
     return null;
   }
 
-  const merger = prData.merged_by;
-  const shortSha = prData.merge_commit_sha.substring(0, 7);
+  const merger = prData.merged_by.login;
+  const sha = prData.merge_commit_sha;
+  const shortSha = sha.length >= 7 ? sha.substring(0, 7) : sha;
   return `merged_by: @${merger} · ${shortSha}`;
 }
 
@@ -265,7 +266,7 @@ export async function handlePullRequest(payload) {
 
   // Extract PR-specific fields
   const merged_at = pr.merged_at ?? null;
-  const merged_by = pr.merged_by?.login ?? null;
+  const merged_by = pr.merged_by ?? null;
   const merge_commit_sha = pr.merge_commit_sha ?? null;
   const head_ref = pr.head?.ref ?? 'unknown';
   const base_ref = pr.base?.ref ?? 'unknown';
@@ -306,7 +307,7 @@ export async function handlePullRequest(payload) {
         })),
       draft,
       mergedAt: merged_at,
-      mergedBy: merged_by,
+      mergedBy: merged_by?.login ?? null,
       branchInfo: `${head_ref} → ${base_ref}`
     }
   };
