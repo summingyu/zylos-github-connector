@@ -13,7 +13,8 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { handlePullRequest, COLOR_EMOJI_MAP, formatLabels } from '../handlers/pull-request.js';
+import { handlePullRequest } from '../handlers/pull-request.js';
+import { COLOR_EMOJI_MAP, formatLabels } from '../formatters/index.js';
 
 describe('Pull Request Handler', () => {
   describe('Input Validation', () => {
