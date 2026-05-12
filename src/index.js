@@ -7,7 +7,7 @@
 
 import fastify from 'fastify';
 import helmet from '@fastify/helmet';
-import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG } from './lib/config.js';
+import { getConfig, watchConfig, DATA_DIR, DEFAULT_CONFIG, sanitizeForLogging } from './lib/config.js';
 import { verifySignature } from './lib/verifier.js';
 import { hasDeliveryBeenSeen, markDeliveryAsSeen, seenDeliveries } from './lib/dedupe.js';
 import {
@@ -24,8 +24,20 @@ console.log(`[github-connector] Starting...`);
 console.log(`[github-connector] Data directory: ${DATA_DIR}`);
 
 // Load configuration
-let config = getConfig();
-console.log(`[github-connector] Config loaded, enabled: ${config.enabled}`);
+let config;
+try {
+  config = await getConfig();
+  console.log(`[github-connector] Configuration loaded:`, {
+    port: config.port,
+    logging: config.logging?.level || 'info',
+    webhookSecret: config.webhookSecret ? '[REDACTED]' : 'NOT SET',
+    commBridge: config.commBridge
+  });
+} catch (error) {
+  console.error(`[github-connector] Failed to load configuration: ${error.message}`);
+  console.error(`[github-connector] Exiting due to configuration error`);
+  process.exit(1);
+}
 
 if (!config.enabled) {
   console.log(`[github-connector] Component disabled in config, exiting.`);
@@ -352,7 +364,7 @@ app.post('/webhook', async (request, reply) => {
 // Main startup function
 async function start() {
   try {
-    const port = config.port || 3461;
+    const port = config.port;
     const host = '0.0.0.0';
 
     await app.listen({ port, host });
