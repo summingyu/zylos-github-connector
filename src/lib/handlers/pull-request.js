@@ -296,10 +296,12 @@ export async function handlePullRequest(payload) {
       number,
       title,
       sender: senderLogin,
-      labels: labels.map(label => ({
-        name: label.name,
-        color: label.color
-      })),
+      labels: labels
+        .filter(label => label && typeof label === 'object')
+        .map(label => ({
+          name: label.name || 'unknown',
+          color: label.color || '000000'
+        })),
       draft,
       mergedAt: merged_at,
       mergedBy: merged_by,
