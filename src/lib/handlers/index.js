@@ -11,8 +11,9 @@
  * - data: object - Extracted event data
  */
 
-// Export actual issues handler
+// Export actual handlers
 export { handleIssues } from './issues.js';
+export { handlePullRequest } from './pull-request.js';
 
 /**
  * Placeholder handler for push events
@@ -57,27 +58,6 @@ export async function handleIssueComment(payload) {
   };
 }
 
-/**
- * Placeholder handler for pull_request events
- *
- * @param {Object} payload - Webhook payload
- * @returns {Promise<Object>} Handler result
- */
-export async function handlePullRequest(payload) {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('Invalid payload: expected object');
-  }
-  return {
-    processed: false,
-    message: 'Pull request handler not yet implemented',
-    event: 'pull_request',
-    data: {
-      action: payload.action,
-      prNumber: payload.pull_request?.number,
-      title: payload.pull_request?.title
-    }
-  };
-}
 
 /**
  * Placeholder handler for release events

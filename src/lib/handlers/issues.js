@@ -277,3 +277,6 @@ export async function handleIssues(payload) {
     }
   };
 }
+
+// Export reusable utilities for use in other handlers
+export { COLOR_EMOJI_MAP, formatLabels };
