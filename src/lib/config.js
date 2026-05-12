@@ -5,7 +5,7 @@
  * with hot-reload support via file watcher.
  */
 
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 
 const HOME = process.env.HOME;
@@ -17,6 +17,7 @@ export const DEFAULT_CONFIG = {
   enabled: true,
   port: 3461,
   webhookSecret: '',
+  maxPayloadSize: '10mb',
   commBridge: {
     enabled: true,
     defaultEndpoint: 'default'
@@ -31,18 +32,110 @@ let config = null;
 let configWatcher = null;
 
 /**
- * Load configuration from file
- * @returns {Object} Configuration object
+ * Deep merge default configuration with user configuration
+ * @param {Object} defaults - Default configuration object
+ * @param {Object} userConfig - User configuration object
+ * @returns {Object} Merged configuration
  */
-export function loadConfig() {
-  try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      const content = fs.readFileSync(CONFIG_PATH, 'utf8');
-      config = { ...DEFAULT_CONFIG, ...JSON.parse(content) };
-    } else {
-      console.warn(`[github-connector] Config file not found: ${CONFIG_PATH}`);
-      config = { ...DEFAULT_CONFIG };
+export function mergeDefaults(defaults, userConfig) {
+  return {
+    ...defaults,
+    ...userConfig,
+    commBridge: {
+      ...defaults.commBridge,
+      ...(userConfig.commBridge || {})
+    },
+    logging: {
+      ...defaults.logging,
+      ...(userConfig.logging || {})
     }
+  };
+}
+
+/**
+ * Validate configuration object
+ * @param {Object} config - Configuration to validate
+ * @throws {Error} If validation fails
+ */
+export function validateConfig(config) {
+  // Validate webhookSecret
+  if (config.webhookSecret !== undefined && typeof config.webhookSecret !== 'string') {
+    throw new Error('webhookSecret must be a string');
+  }
+  if (config.webhookSecret && config.webhookSecret.length < 16) {
+    throw new Error('webhookSecret must be at least 16 characters long');
+  }
+
+  // Validate port
+  if (config.port !== undefined) {
+    if (typeof config.port !== 'number') {
+      throw new Error('port must be a number');
+    }
+    if (config.port < 1 || config.port > 65535) {
+      throw new Error('port must be between 1 and 65535');
+    }
+  }
+
+  // Validate enabled
+  if (config.enabled !== undefined && typeof config.enabled !== 'boolean') {
+    throw new Error('enabled must be a boolean');
+  }
+
+  // Validate commBridge.enabled
+  if (config.commBridge?.enabled !== undefined && typeof config.commBridge.enabled !== 'boolean') {
+    throw new Error('commBridge.enabled must be a boolean');
+  }
+
+  // Validate logging.level
+  const validLogLevels = ['error', 'warn', 'info', 'debug'];
+  if (config.logging?.level !== undefined) {
+    if (typeof config.logging.level !== 'string') {
+      throw new Error('logging.level must be a string');
+    }
+    if (!validLogLevels.includes(config.logging.level)) {
+      throw new Error(`logging.level must be one of: ${validLogLevels.join(', ')}`);
+    }
+  }
+}
+
+/**
+ * Sanitize configuration for logging by removing sensitive fields
+ * @param {Object} config - Configuration object
+ * @returns {Object} Sanitized configuration
+ */
+export function sanitizeForLogging(config) {
+  const sanitized = { ...config };
+  if (sanitized.webhookSecret) {
+    sanitized.webhookSecret = '[REDACTED]';
+  }
+  return sanitized;
+}
+
+/**
+ * Load configuration from file
+ * @returns {Promise<Object>} Configuration object
+ */
+export async function loadConfig() {
+  try {
+    let userConfig = {};
+
+    // Try to read configuration file
+    try {
+      const content = await fs.readFile(CONFIG_PATH, 'utf8');
+      userConfig = JSON.parse(content);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        console.warn(`[github-connector] Config file not found: ${CONFIG_PATH}`);
+        console.warn('[github-connector] Using default configuration');
+      } else if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON in config file: ${error.message}`);
+      } else {
+        throw error;
+      }
+    }
+
+    // Merge defaults with user configuration
+    config = mergeDefaults(DEFAULT_CONFIG, userConfig);
 
     // Apply environment variable overrides
     if (process.env.GITHUB_WEBHOOK_SECRET) {
@@ -50,37 +143,54 @@ export function loadConfig() {
       console.log('[github-connector] Using webhook secret from environment variable');
     }
 
+    // Validate configuration
+    validateConfig(config);
+
+    // Log configuration load (with sensitive fields redacted)
+    console.log('[github-connector] Configuration loaded:', sanitizeForLogging(config));
+
     // Validate webhook secret
     if (!config.webhookSecret || config.webhookSecret === '') {
       console.warn('[github-connector] WARNING: webhookSecret is not configured!');
       console.warn('[github-connector] Webhook signature verification will fail.');
       console.warn('[github-connector] Set webhookSecret in config.json or GITHUB_WEBHOOK_SECRET environment variable.');
     }
+
+    return config;
   } catch (err) {
     console.error(`[github-connector] Failed to load config: ${err.message}`);
+    // Fallback to default configuration on error
     config = { ...DEFAULT_CONFIG };
+    return config;
+  }
+}
+
+/**
+ * Get current configuration
+ * @returns {Promise<Object>} Configuration object
+ */
+export async function getConfig() {
+  if (!config) {
+    await loadConfig();
   }
   return config;
 }
 
 /**
- * Get current configuration
+ * Get current configuration synchronously (for backward compatibility)
  * @returns {Object} Configuration object
  */
-export function getConfig() {
-  if (!config) {
-    loadConfig();
-  }
-  return config;
+export function getConfigSync() {
+  return config || { ...DEFAULT_CONFIG };
 }
 
 /**
  * Save configuration to file
  * @param {Object} newConfig - Configuration to save
  */
-export function saveConfig(newConfig) {
+export async function saveConfig(newConfig) {
   try {
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 2));
+    await fs.writeFile(CONFIG_PATH, JSON.stringify(newConfig, null, 2));
     config = newConfig;
   } catch (err) {
     console.error(`[github-connector] Failed to save config: ${err.message}`);
@@ -97,14 +207,20 @@ export function watchConfig(onChange) {
     configWatcher.close();
   }
 
-  if (fs.existsSync(CONFIG_PATH)) {
-    configWatcher = fs.watch(CONFIG_PATH, (eventType) => {
+  // Use synchronous fs.watch for file watching
+  const fsSync = require('fs');
+
+  if (fsSync.existsSync(CONFIG_PATH)) {
+    configWatcher = fsSync.watch(CONFIG_PATH, (eventType) => {
       if (eventType === 'change') {
         console.log('[github-connector] Config file changed, reloading...');
-        loadConfig();
-        if (onChange) {
-          onChange(config);
-        }
+        loadConfig().then(newConfig => {
+          if (onChange) {
+            onChange(newConfig);
+          }
+        }).catch(err => {
+          console.error(`[github-connector] Failed to reload config: ${err.message}`);
+        });
       }
     });
   }
