@@ -153,10 +153,10 @@
 | CONF-03 | Phase 3 | 待处理 |
 | CONF-04 | Phase 3 | 待处理 |
 | CONF-05 | Phase 3 | 待处理 |
-| LIFE-01 | Phase 3 | 待处理 |
-| LIFE-02 | Phase 3 | 待处理 |
-| LIFE-03 | Phase 3 | 待处理 |
-| LIFE-04 | Phase 3 | 待处理 |
+| LIFE-01 | Phase 10 | 完成 (2026-05-12) |
+| LIFE-02 | Phase 10 | 完成 (2026-05-12) |
+| LIFE-03 | Phase 10 | 完成 (2026-05-12) |
+| LIFE-04 | Phase 10 | 完成 (2026-05-12) |
 | META-01 | Phase 4 | 待处理 |
 | META-02 | Phase 4 | 待处理 |
 | META-03 | Phase 4 | 待处理 |
