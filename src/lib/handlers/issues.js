@@ -114,8 +114,13 @@ function formatLabels(labels) {
   }
 
   return labels.map(label => {
-    const emoji = getEmojiForColor(label.color);
-    return `${emoji} ${label.name}`;
+    // Validate label object structure (CR-02)
+    if (!label || typeof label !== 'object') {
+      return '⚫ unknown';
+    }
+    const emoji = getEmojiForColor(label?.color);
+    const name = label?.name || 'unknown';
+    return `${emoji} ${name}`;
   }).join(' ');
 }
 
