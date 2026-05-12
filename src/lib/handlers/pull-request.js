@@ -7,8 +7,8 @@
  * @module handlers/pull-request
  */
 
-// Import reusable utilities from issues handler
-import { COLOR_EMOJI_MAP, formatLabels } from './issues.js';
+// Import centralized formatters
+import { buildBaseMessage, addLine, addUrl, finalize, getActionLabel, formatLabels } from '../formatters/index.js';
 
 // Logger will be passed from the main app via Fastify's app.log
 // For now, we use console for warnings (will be integrated with app.log in main flow)
@@ -30,21 +30,6 @@ const SUPPORTED_ACTIONS = new Set([
   'merged',
   'ready_for_review'
 ]);
-
-/**
- * Action label mapping for message formatting
- *
- * Maps action types to their display labels with emojis.
- *
- * @type {Object<string, string>}
- */
-const ACTION_LABELS = {
-  opened: '🔓 PR Opened',
-  closed: '🔒 PR Closed',
-  reopened: '♻️ PR Reopened',
-  merged: '🟣 PR Merged',
-  ready_for_review: '👀 PR Ready for Review'
-};
 
 /**
  * Formats branch information for pull requests
@@ -90,6 +75,9 @@ function formatMergerInfo(prData) {
 /**
  * Formats a pull request event into a readable message
  *
+ * Uses centralized formatters for consistent message structure.
+ * Action labels are obtained via getActionLabel from the formatters module.
+ *
  * @param {Object} prData - Extracted pull request data
  * @param {string} prData.action - The action performed
  * @param {string} prData.title - PR title
@@ -133,42 +121,39 @@ function formatPRMessage(prData) {
     base_ref
   } = prData;
 
-  // Get action label
-  const actionLabel = ACTION_LABELS[action] || `PR ${action}`;
+  // Get action label from centralized mapping
+  const actionLabel = getActionLabel('pull_request', action);
 
-  // Build message lines
-  const lines = [];
+  // Build message using centralized formatters
+  const builder = buildBaseMessage(sender, actionLabel);
 
-  // Line 1: Action label with sender
-  lines.push(`${actionLabel} by @${sender}`);
-
-  // Line 2: Labels (if any)
+  // Add labels (if any)
   const labelLine = formatLabels(labels);
   if (labelLine) {
-    lines.push(labelLine);
+    addLine(builder, labelLine);
   }
 
-  // Line 3: PR information with draft prefix if applicable
+  // Add PR information with draft prefix if applicable
   const prefix = draft ? '[Draft] ' : '';
-  lines.push(`${prefix}#${number}: ${title}`);
+  addLine(builder, `${prefix}#${number}: ${title}`);
 
-  // Line 4: Branch information
-  lines.push(formatBranchInfo({ head_ref: head_ref, base_ref: base_ref }));
+  // Add branch information
+  addLine(builder, formatBranchInfo({ head_ref: head_ref, base_ref: base_ref }));
 
-  // Line 5: Merger information (only for merged action)
+  // Add merger information (only for merged action)
   if (action === 'merged') {
     const mergerInfo = formatMergerInfo({ merged_by, merge_commit_sha });
     if (mergerInfo) {
-      lines.push(mergerInfo);
+      addLine(builder, mergerInfo);
     }
   }
 
-  // Line 6: URL (only if number is not null)
+  // Add URL (only if number is not null)
   if (number !== null && htmlUrl) {
-    lines.push(`🔗 ${htmlUrl}`);
+    addUrl(builder, htmlUrl);
   }
 
-  return lines.join('\n');
+  return finalize(builder);
 }
 
 /**
@@ -312,6 +297,3 @@ export async function handlePullRequest(payload) {
     }
   };
 }
-
-// Export reusable utilities for use in other handlers
-export { COLOR_EMOJI_MAP, formatLabels };

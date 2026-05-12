@@ -8,9 +8,9 @@
 import { describe, it, mock, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { routeEvent, registerHandler, hasHandler } from '../router.js';
-import { handlePullRequest, COLOR_EMOJI_MAP as prColorMap } from '../handlers/pull-request.js';
-import { handleIssues, COLOR_EMOJI_MAP as issuesColorMap, formatLabels as issuesFormatLabels } from '../handlers/issues.js';
-import { formatLabels as prFormatLabels } from '../handlers/pull-request.js';
+import { handlePullRequest } from '../handlers/pull-request.js';
+import { handleIssues } from '../handlers/issues.js';
+import { COLOR_EMOJI_MAP, formatLabels } from '../formatters/index.js';
 
 describe('Pull Request Handler Integration', () => {
   describe('Router Integration', () => {
@@ -625,28 +625,27 @@ describe('Pull Request Handler Integration', () => {
   });
 
   describe('Reusable Logic Validation', () => {
-    it('should verify COLOR_EMOJI_MAP consistency between handlers', () => {
-      // Both should have the same mappings
+    it('should verify COLOR_EMOJI_MAP is available from formatters', () => {
+      // COLOR_EMOJI_MAP is now centralized in formatters module
       const testColors = ['d73a4a', 'a2eeef', '7057ff', '008672', 'fbca04'];
 
       for (const color of testColors) {
-        assert.strictEqual(prColorMap[color], issuesColorMap[color]);
+        assert.ok(COLOR_EMOJI_MAP[color]);
       }
     });
 
-    it('should verify formatLabels behavior consistency', () => {
+    it('should verify formatLabels behavior', () => {
       const labels = [
         { name: 'bug', color: 'd73a4a' },
         { name: 'feature', color: 'a2eeef' }
       ];
 
-      const prResult = prFormatLabels(labels);
-      const issuesResult = issuesFormatLabels(labels);
+      const result = formatLabels(labels);
 
-      assert.strictEqual(prResult, issuesResult);
+      assert.strictEqual(result, '🔴 bug 🔵 feature');
     });
 
-    it('should test same labels display identically in both handlers', async () => {
+    it('should test labels display correctly', async () => {
       const labels = [
         { name: 'enhancement', color: 'a2eeef' },
         { name: 'high-priority', color: 'd73a4a' }
