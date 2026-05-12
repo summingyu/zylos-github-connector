@@ -211,7 +211,11 @@ describe('End-to-End Integration Tests', () => {
   });
 
   it('should detect duplicate delivery IDs', async () => {
-    const payload = { ref: 'refs/heads/main' };
+    const payload = {
+      ref: 'refs/heads/main',
+      repository: { full_name: 'test/repo' },
+      pusher: { name: 'testuser' }
+    };
     const deliveryId = 'duplicate-test-delivery';
 
     // First request
@@ -247,10 +251,10 @@ describe('End-to-End Integration Tests', () => {
 
   it('should handle multiple different events correctly', async () => {
     const events = [
-      { type: 'push', payload: { ref: 'refs/heads/feature' } },
-      { type: 'issues', payload: { action: 'closed', issue: { number: 1 } } },
-      { type: 'pull_request', payload: { action: 'merged', pull_request: { number: 5 } } },
-      { type: 'release', payload: { action: 'published', release: { tag_name: 'v1.0.0' } } }
+      { type: 'push', payload: { ref: 'refs/heads/feature', repository: { full_name: 'test/repo' }, pusher: { name: 'testuser' } } },
+      { type: 'issues', payload: { action: 'closed', issue: { number: 1 }, repository: { full_name: 'test/repo' } } },
+      { type: 'pull_request', payload: { action: 'merged', pull_request: { number: 5 }, repository: { full_name: 'test/repo' } } },
+      { type: 'release', payload: { action: 'published', release: { tag_name: 'v1.0.0' }, repository: { full_name: 'test/repo' } } }
     ];
 
     for (const event of events) {
