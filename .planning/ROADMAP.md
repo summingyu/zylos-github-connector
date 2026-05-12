@@ -238,13 +238,13 @@
 
 ---
 
-## Phase 10: Lifecycle and PM2 Integration
+## Phase 10: Lifecycle and PM2 Integration ✅
 
 **Goal:** 实现带有优雅关闭和启用标志的 PM2 进程管理。
 
 **Mode:** mvp
 
-**Status:** 📋 Planning Complete (2026-05-12)
+**Completed:** 2026-05-12
 
 **Success Criteria:**
 
@@ -257,7 +257,7 @@
 
 **Plans:**
 
-- [x] 10-01-PLAN.md — 修复 PM2 配置路径、验证优雅关闭、创建集成测试和测试脚本
+- [x] 10-01-PLAN.md — 修复 PM2 配置路径、验证优雅关闭、创建集成测试和测试脚本 — Committed: f5953b5
 
 ---
 
@@ -278,12 +278,7 @@
 
 **Plans:**
 
-- 创建带有组件元数据 frontmatter 的 SKILL.md
-- 设置组件名称（github-connector）和版本（0.1.0）
-- 编写包含触发模式的描述
-- 将 type 设置为 "communication"
-- 声明 comm-bridge 依赖
-- 定义包含 webhook secret（必需、敏感）的配置架构
+- [ ] 11-01-PLAN.md — 完善 SKILL.md 组件元数据：添加 dependencies 字段、改进 description 触发模式、添加文档正文依赖说明
 
 ---
 
@@ -370,4 +365,4 @@ Phase 3 (Event Routing)
 
 ---
 
-**Last Updated:** 2026-05-12 (Phase 10 planning complete)
+**Last Updated:** 2026-05-12 (Phase 11 planned)
