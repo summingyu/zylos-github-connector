@@ -250,7 +250,9 @@ export async function handleIssues(payload) {
   }
 
   // Extract data with placeholders (per D-14, D-15, D-16)
-  const title = issue.title && issue.title.trim() ? issue.title : '[No title]';
+  const title = (typeof issue.title === 'string' && issue.title.trim())
+    ? issue.title
+    : '[No title]';
   const number = issue.number ?? null;
   const htmlUrl = issue.html_url ?? null;
   const labels = issue.labels ?? [];

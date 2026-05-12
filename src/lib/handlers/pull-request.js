@@ -254,7 +254,9 @@ export async function handlePullRequest(payload) {
   }
 
   // Extract data with placeholders (per D-19, D-20, D-21)
-  const title = pr.title && pr.title.trim() ? pr.title : '[No title]';
+  const title = (typeof pr.title === 'string' && pr.title.trim())
+    ? pr.title
+    : '[No title]';
   const number = pr.number ?? null;
   const htmlUrl = pr.html_url ?? null;
   const labels = pr.labels ?? [];
