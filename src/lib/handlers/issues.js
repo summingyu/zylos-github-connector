@@ -74,6 +74,9 @@ const COLOR_EMOJI_MAP = {
   'c5def5': '🔵'   // blue (sky)
 };
 
+// Freeze COLOR_EMOJI_MAP to prevent prototype pollution (CR-01)
+Object.freeze(COLOR_EMOJI_MAP);
+
 /**
  * Maps a hex color code to an emoji dot
  *
