@@ -55,13 +55,19 @@ export function formatGithubUrl(owner, repo, type, number) {
     return null;
   }
 
+  const SUPPORTED_TYPES = new Set(['issues', 'pull', 'repo']);
+  if (!SUPPORTED_TYPES.has(type)) {
+    console.warn(`[formatGithubUrl] Unsupported type: ${type}`);
+    return null;
+  }
+
   const baseUrl = `https://github.com/${owner}/${repo}`;
 
-  if (type === 'issues' && number !== null && number !== undefined) {
+  if (type === 'issues' && number != null) {
     return `${baseUrl}/issues/${number}`;
   }
 
-  if (type === 'pull' && number !== null && number !== undefined) {
+  if (type === 'pull' && number != null) {
     return `${baseUrl}/pull/${number}`;
   }
 

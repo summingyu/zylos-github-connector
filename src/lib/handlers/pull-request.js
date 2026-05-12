@@ -68,6 +68,11 @@ function formatMergerInfo(prData) {
 
   const merger = prData.merged_by.login;
   const sha = prData.merge_commit_sha;
+
+  if (typeof sha !== 'string' || sha.length === 0) {
+    return null;
+  }
+
   const shortSha = sha.length >= 7 ? sha.substring(0, 7) : sha;
   return `merged_by: @${merger} · ${shortSha}`;
 }

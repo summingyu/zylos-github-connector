@@ -150,7 +150,9 @@ export async function handleRelease(payload) {
   const releaseName = (release.name && release.name.trim()) ? release.name : tagName;
   const releaseUrl = release.html_url ?? null;
   const senderLogin = sender?.login ?? 'unknown';
-  const assetsCount = Array.isArray(release.assets) ? release.assets.length : 0;
+  const assetsCount = (Array.isArray(release.assets) && release.assets.every(a => a && typeof a === 'object'))
+    ? release.assets.length
+    : 0;
 
   // Build release data object
   const releaseData = {

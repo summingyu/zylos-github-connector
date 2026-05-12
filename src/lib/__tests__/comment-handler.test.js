@@ -620,9 +620,11 @@ describe('Comment Handler', () => {
         sender: { login: 'alice' }
       };
 
-      const result = await handleIssueComment(payload);
-
-      assert.ok(result.message.includes('#null: Test'));
+      // After WR-03 fix, null issueNumber should throw an error
+      await assert.rejects(
+        async () => await handleIssueComment(payload),
+        { message: /Invalid issueNumber/ }
+      );
     });
   });
 

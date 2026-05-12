@@ -25,6 +25,12 @@
  * // Returns: { lines: ['🔓 Issue Opened by @alice'] }
  */
 export function buildBaseMessage(sender, actionLabel) {
+  if (!sender || typeof sender !== 'string') {
+    throw new Error('Invalid sender: expected non-empty string');
+  }
+  if (!actionLabel || typeof actionLabel !== 'string') {
+    throw new Error('Invalid actionLabel: expected non-empty string');
+  }
   const lines = [];
 
   // Line 1: Action label with sender
@@ -48,7 +54,7 @@ export function buildBaseMessage(sender, actionLabel) {
  */
 export function addLine(builder, content) {
   if (!builder || !Array.isArray(builder.lines)) {
-    throw new Error('Invalid builder: expected object with lines array');
+    throw new Error('Invalid builder in addLine: expected object with lines array');
   }
 
   if (content !== null && content !== undefined && content !== '') {
@@ -74,7 +80,7 @@ export function addLine(builder, content) {
  */
 export function addUrl(builder, url) {
   if (!builder || !Array.isArray(builder.lines)) {
-    throw new Error('Invalid builder: expected object with lines array');
+    throw new Error('Invalid builder in addUrl: expected object with lines array');
   }
 
   if (url && typeof url === 'string' && url.trim()) {
@@ -105,7 +111,7 @@ export function addUrl(builder, url) {
  */
 export function finalize(builder) {
   if (!builder || !Array.isArray(builder.lines)) {
-    throw new Error('Invalid builder: expected object with lines array');
+    throw new Error('Invalid builder in finalize: expected object with lines array');
   }
 
   return builder.lines.join('\n');

@@ -65,7 +65,7 @@ Object.values(ACTION_LABELS).forEach(actionMap => {
  */
 export function getActionLabel(eventType, action) {
   if (!eventType || !action) {
-    return 'Unknown Action';
+    return '❓ Unknown Action';
   }
 
   // Get the action map for the event type
@@ -73,7 +73,7 @@ export function getActionLabel(eventType, action) {
 
   if (!eventActions) {
     // Event type not found, return generic label
-    return `${eventType} ${action}`;
+    return `❓ ${eventType} ${action}`;
   }
 
   // Get the specific action label
@@ -81,7 +81,7 @@ export function getActionLabel(eventType, action) {
 
   if (!label) {
     // Action not found, return generic label
-    return `${eventType} ${action}`;
+    return `❓ ${eventType} ${action}`;
   }
 
   return label;

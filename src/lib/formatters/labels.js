@@ -95,7 +95,7 @@ export function formatLabels(labels) {
       return '⚫ unknown';
     }
     const emoji = getEmojiForColor(label?.color);
-    const name = label?.name || 'unknown';
+    const name = (label?.name && typeof label.name === 'string') ? label.name : 'unknown';
     return `${emoji} ${name}`;
   }).join(' ');
 }

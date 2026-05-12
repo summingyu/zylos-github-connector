@@ -45,6 +45,10 @@ const SUPPORTED_ACTIONS = new Set(['created']);
  * // Returns multi-line message with action label, issue context, comment preview, and URL
  */
 function formatCommentMessage(action, sender, issueTitle, issueNumber, commentBody, commentUrl, isPr) {
+  if (issueNumber == null || typeof issueNumber !== 'number') {
+    throw new Error('Invalid issueNumber: expected non-null number');
+  }
+
   // Get action label from centralized mapping
   const actionLabel = getActionLabel('issue_comment', action);
 

@@ -359,39 +359,39 @@ describe('Action Label Formatter Tests', () => {
     describe('unknown actions', () => {
       it('should return generic label for unknown issue action', () => {
         const result = getActionLabel('issues', 'unknown');
-        assert.strictEqual(result, 'issues unknown');
+        assert.strictEqual(result, '❓ issues unknown');
       });
 
       it('should return generic label for unknown pull_request action', () => {
         const result = getActionLabel('pull_request', 'unknown');
-        assert.strictEqual(result, 'pull_request unknown');
+        assert.strictEqual(result, '❓ pull_request unknown');
       });
     });
 
     describe('unknown event types', () => {
       it('should return generic label for unknown event type', () => {
         const result = getActionLabel('unknown_event', 'action');
-        assert.strictEqual(result, 'unknown_event action');
+        assert.strictEqual(result, '❓ unknown_event action');
       });
 
       it('should handle null eventType', () => {
         const result = getActionLabel(null, 'action');
-        assert.strictEqual(result, 'Unknown Action');
+        assert.strictEqual(result, '❓ Unknown Action');
       });
 
       it('should handle null action', () => {
         const result = getActionLabel('issues', null);
-        assert.strictEqual(result, 'Unknown Action');
+        assert.strictEqual(result, '❓ Unknown Action');
       });
 
       it('should handle undefined eventType', () => {
         const result = getActionLabel(undefined, 'action');
-        assert.strictEqual(result, 'Unknown Action');
+        assert.strictEqual(result, '❓ Unknown Action');
       });
 
       it('should handle undefined action', () => {
         const result = getActionLabel('issues', undefined);
-        assert.strictEqual(result, 'Unknown Action');
+        assert.strictEqual(result, '❓ Unknown Action');
       });
     });
   });
