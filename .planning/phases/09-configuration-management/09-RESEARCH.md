@@ -625,27 +625,27 @@ export default fp(configPlugin, {
 
 **如果此表为空：** 表示本研究中的所有声明都已验证或引用，无需用户确认。
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **配置验证的严格程度**
-   - What we know: 需要 webhook secret、端口、日志级别验证
-   - What's unclear: 是否需要完整的 JSON Schema 验证（使用 ajv）还是简单的手动验证足够
-   - Recommendation: 从简单的手动验证开始，如果配置变复杂再引入 JSON Schema
+1. **配置验证的严格程度** ✅
+   - **Decision:** 使用简单的手动验证（validateConfig 函数），不引入 ajv
+   - **Reason:** 配置结构简单（5个顶层字段），手动验证足够且减少依赖
+   - **Implementation:** 验证规则包括 webhookSecret 长度 >= 16、端口范围 1-65535、日志级别枚举值
 
-2. **PM2 集成策略**
-   - What we know: PM2 用于进程管理，环境变量在运行时不可变
-   - What's unclear: 配置重载是否需要通过 PM2 `pm2 reload` 触发进程重启，还是应用内热重载足够
-   - Recommendation: 优先应用内热重载（无需重启），端口变更等需要重启的配置记录警告并提示手动操作
+2. **PM2 集成策略** ✅
+   - **Decision:** 优先应用内热重载（fs.watch + 防抖），不通过 PM2 reload
+   - **Reason:** 配置变更无需进程重启，减少停机时间
+   - **Implementation:** 端口变更记录警告（"重启应用以生效"），其他配置立即生效
 
-3. **多环境配置支持**
-   - What we know: 当前需求未明确多环境配置（dev/staging/prod）
-   - What's unclear: 是否需要支持环境特定的配置覆盖（如 `config.dev.json`）
-   - Recommendation: 当前仅支持单一配置文件，如果后续需要多环境支持，可扩展为 `config.{env}.json` 模式
+3. **多环境配置支持** ✅
+   - **Decision:** 当前仅支持单一配置文件 `config.json`
+   - **Reason:** 需求未明确多环境支持，避免过度设计
+   - **Future:** 如需要，可扩展为 `config.{env}.json` 模式（v1.1+）
 
-4. **配置变更通知机制**
-   - What we know: 配置变更需要通知应用模块（HTTP 服务器、事件处理程序等）
-   - What's unclear: 是否需要模块级细粒度通知（如仅通知 HTTP 服务器端口变更）还是全局广播
-   - Recommendation: 使用 EventEmitter 全局广播，各模块监听 'reloaded' 事件并根据需要更新自身状态
+4. **配置变更通知机制** ✅
+   - **Decision:** 使用回调函数（onChange）而非 EventEmitter
+   - **Reason:** 更简单，满足当前需求（单个监听器：Fastify 服务器）
+   - **Implementation:** `watchConfig(onChange)` 接收回调，传递新旧配置对象
 
 ## Environment Availability
 
