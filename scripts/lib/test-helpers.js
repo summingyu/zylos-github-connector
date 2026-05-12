@@ -5,6 +5,8 @@
  */
 
 import crypto from 'crypto';
+import http from 'http';
+import https from 'https';
 
 /**
  * GitHub webhook 事件类型
@@ -195,8 +197,8 @@ export async function sendRequest({ url, method = 'POST', headers = {}, body = '
   };
 
   return new Promise((resolve, reject) => {
-    const http = urlObj.protocol === 'https:' ? require('https') : require('http');
-    const req = http.request(requestOptions, (res) => {
+    const httpModule = urlObj.protocol === 'https:' ? https : http;
+    const req = httpModule.request(requestOptions, (res) => {
       let responseBody = '';
       res.on('data', (chunk) => responseBody += chunk);
       res.on('end', () => {
