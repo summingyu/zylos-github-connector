@@ -48,9 +48,21 @@ function writeJsonFile(filePath, value) {
 }
 
 function configKeyFromRequiredName(name) {
+  // Special case: GITHUB_WEBHOOK_SECRET -> webhookSecret (not 'secret')
+  if (name === 'GITHUB_WEBHOOK_SECRET') {
+    return 'webhookSecret';
+  }
   return name
     .replace(new RegExp(`^${COMPONENT_PREFIX}`), '')
     .toLowerCase();
+}
+
+function convertConfigValue(key, value) {
+  // Type conversion for port: string -> number
+  if (key === 'port' && typeof value === 'string') {
+    return parseInt(value, 10);
+  }
+  return value;
 }
 
 try {
@@ -67,7 +79,8 @@ try {
   const config = readJsonFile(CONFIG_PATH, DEFAULT_CONFIG);
   for (const [name, value] of Object.entries(collected)) {
     if (value === undefined || value === null || value === '') continue;
-    config[configKeyFromRequiredName(name)] = value;
+    const key = configKeyFromRequiredName(name);
+    config[key] = convertConfigValue(key, value);
   }
 
   writeJsonFile(CONFIG_PATH, config);
