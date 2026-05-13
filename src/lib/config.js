@@ -32,6 +32,7 @@ export const DEFAULT_CONFIG = {
 let config = null;
 let configWatcher = null;
 let debounceTimer = null;
+let watchedConfigPath = CONFIG_PATH; // Track the path being watched
 
 /**
  * Deep merge default configuration with user configuration
@@ -115,56 +116,51 @@ export function sanitizeForLogging(config) {
 
 /**
  * Load configuration from file
+ * @param {string} [configPath] - Optional custom config path for testing
  * @returns {Promise<Object>} Configuration object
  */
-export async function loadConfig() {
+export async function loadConfig(configPath) {
+  let userConfig = {};
+  const targetConfigPath = configPath || CONFIG_PATH;
+
+  // Try to read configuration file
   try {
-    let userConfig = {};
-
-    // Try to read configuration file
-    try {
-      const content = await fs.readFile(CONFIG_PATH, 'utf8');
-      userConfig = JSON.parse(content);
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        console.warn(`[github-connector] Config file not found: ${CONFIG_PATH}`);
-        console.warn('[github-connector] Using default configuration');
-      } else if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in config file: ${error.message}`);
-      } else {
-        throw error;
-      }
+    const content = await fs.readFile(targetConfigPath, 'utf8');
+    userConfig = JSON.parse(content);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.warn(`[github-connector] Config file not found: ${targetConfigPath}`);
+      console.warn('[github-connector] Using default configuration');
+    } else if (error instanceof SyntaxError) {
+      throw new Error(`Invalid JSON in config file: ${error.message}`);
+    } else {
+      throw error;
     }
-
-    // Merge defaults with user configuration
-    config = mergeDefaults(DEFAULT_CONFIG, userConfig);
-
-    // Apply environment variable overrides
-    if (process.env.GITHUB_WEBHOOK_SECRET) {
-      config.webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-      console.log('[github-connector] Using webhook secret from environment variable');
-    }
-
-    // Validate configuration
-    validateConfig(config);
-
-    // Log configuration load (with sensitive fields redacted)
-    console.log('[github-connector] Configuration loaded:', sanitizeForLogging(config));
-
-    // Validate webhook secret
-    if (!config.webhookSecret || config.webhookSecret === '') {
-      console.warn('[github-connector] WARNING: webhookSecret is not configured!');
-      console.warn('[github-connector] Webhook signature verification will fail.');
-      console.warn('[github-connector] Set webhookSecret in config.json or GITHUB_WEBHOOK_SECRET environment variable.');
-    }
-
-    return config;
-  } catch (err) {
-    console.error(`[github-connector] Failed to load config: ${err.message}`);
-    // Fallback to default configuration on error
-    config = { ...DEFAULT_CONFIG };
-    return config;
   }
+
+  // Merge defaults with user configuration
+  config = mergeDefaults(DEFAULT_CONFIG, userConfig);
+
+  // Apply environment variable overrides
+  if (process.env.GITHUB_WEBHOOK_SECRET) {
+    config.webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+    console.log('[github-connector] Using webhook secret from environment variable');
+  }
+
+  // Validate configuration
+  validateConfig(config);
+
+  // Log configuration load (with sensitive fields redacted)
+  console.log('[github-connector] Configuration loaded:', sanitizeForLogging(config));
+
+  // Validate webhook secret
+  if (!config.webhookSecret || config.webhookSecret === '') {
+    console.warn('[github-connector] WARNING: webhookSecret is not configured!');
+    console.warn('[github-connector] Webhook signature verification will fail.');
+    console.warn('[github-connector] Set webhookSecret in config.json or GITHUB_WEBHOOK_SECRET environment variable.');
+  }
+
+  return config;
 }
 
 /**
@@ -203,14 +199,18 @@ export async function saveConfig(newConfig) {
 /**
  * Start watching config file for changes
  * @param {Function} onChange - Callback when config changes (receives newConfig, oldConfig)
+ * @param {string} [configPath] - Optional custom config path for testing
  */
-export function watchConfig(onChange) {
+export function watchConfig(onChange, configPath) {
   if (configWatcher) {
     configWatcher.close();
   }
 
-  if (fsSync.existsSync(CONFIG_PATH)) {
-    configWatcher = fsSync.watch(CONFIG_PATH, (eventType) => {
+  const targetConfigPath = configPath || CONFIG_PATH;
+  watchedConfigPath = targetConfigPath;
+
+  if (fsSync.existsSync(targetConfigPath)) {
+    configWatcher = fsSync.watch(targetConfigPath, (eventType) => {
       // macOS may trigger 'rename', Linux/Windows typically trigger 'change'
       // Don't rely on event type, rely on debouncing
       if (eventType !== 'change' && eventType !== 'rename') {
@@ -226,7 +226,7 @@ export function watchConfig(onChange) {
       debounceTimer = setTimeout(async () => {
         try {
           const oldConfig = config;
-          const newConfig = await loadConfig();
+          const newConfig = await loadConfig(watchedConfigPath);
           console.log('[github-connector] Configuration reloaded successfully');
           if (onChange) {
             onChange(newConfig, oldConfig);
@@ -239,7 +239,7 @@ export function watchConfig(onChange) {
       }, 500);
     });
 
-    console.log(`[github-connector] Watching config file: ${CONFIG_PATH}`);
+    console.log(`[github-connector] Watching config file: ${targetConfigPath}`);
   }
 }
 
