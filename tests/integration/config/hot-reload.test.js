@@ -16,8 +16,8 @@ const __dirname = path.dirname(__filename);
 
 // Test helper: resolve project root directory
 const getProjectRoot = () => {
-  // From tests/integration/config/hot-reload.test.js go up 4 levels to project root
-  return path.resolve(__dirname, '../../../..');
+  // From tests/integration/config/hot-reload.test.js go up 3 levels to project root
+  return path.resolve(__dirname, '../../..');
 };
 
 // Test helper: wait
