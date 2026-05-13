@@ -14,6 +14,12 @@ import { tmpdir } from 'os';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Test helper: resolve project root directory
+const getProjectRoot = () => {
+  // From tests/integration/config/hot-reload.test.js go up 4 levels to project root
+  return path.resolve(__dirname, '../../../..');
+};
+
 // Test helper: wait
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -52,7 +58,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -77,7 +83,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -106,7 +112,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -147,7 +153,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -192,7 +198,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -226,7 +232,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -263,7 +269,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -300,7 +306,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -336,7 +342,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -368,7 +374,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -400,7 +406,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -438,7 +444,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -476,7 +482,7 @@ describe('Configuration Hot Reload Integration Tests', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;

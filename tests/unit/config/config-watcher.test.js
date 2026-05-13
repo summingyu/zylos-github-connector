@@ -14,6 +14,12 @@ import { tmpdir } from 'os';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Test helper: resolve project root directory
+const getProjectRoot = () => {
+  // From tests/unit/config/config-watcher.test.js go up 3 levels to project root
+  return path.resolve(__dirname, '../../..');
+};
+
 // Test helper: wait
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -43,27 +49,27 @@ const cleanupTestConfig = async (testDir, testConfigPath) => {
 describe('Configuration File Watcher', () => {
   describe('Module Exports', () => {
     it('应导出 watchConfig 函数', async () => {
-      const configPath = '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.watchConfig, 'function');
       assert.strictEqual(configModule.watchConfig.length, 1, 'watchConfig should accept 1 argument');
     });
 
     it('应导出 stopWatching 函数', async () => {
-      const configPath = '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.stopWatching, 'function');
       assert.strictEqual(configModule.stopWatching.length, 0, 'stopWatching should accept 0 arguments');
     });
 
     it('应导出 loadConfig 函数', async () => {
-      const configPath = '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.loadConfig, 'function');
     });
 
     it('应导出 CONFIG_PATH 常量', async () => {
-      const configPath = '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.CONFIG_PATH, 'string');
       assert.ok(configModule.CONFIG_PATH.length > 0);
@@ -71,7 +77,7 @@ describe('Configuration File Watcher', () => {
     });
 
     it('应导出 DEFAULT_CONFIG 对象', async () => {
-      const configPath = '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.DEFAULT_CONFIG, 'object');
       assert.ok(configModule.DEFAULT_CONFIG !== null);
@@ -87,7 +93,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -113,7 +119,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -141,7 +147,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -170,7 +176,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -210,7 +216,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -250,7 +256,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -285,7 +291,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -329,7 +335,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const loadConfig = originalModule.loadConfig;
           export const watchConfig = originalModule.watchConfig;
@@ -375,7 +381,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -410,7 +416,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
@@ -436,7 +442,7 @@ describe('Configuration File Watcher', () => {
 
       try {
         const mockCode = `
-          import * as originalModule from '/Users/summingyu/work/zylos-github-connector/src/lib/config.js';
+          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
           export const CONFIG_PATH = '${testConfigPath}';
           export const watchConfig = originalModule.watchConfig;
           export const stopWatching = originalModule.stopWatching;
