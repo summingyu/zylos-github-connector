@@ -52,17 +52,50 @@ function configKeyFromRequiredName(name) {
   if (name === 'GITHUB_WEBHOOK_SECRET') {
     return 'webhookSecret';
   }
+  // Special case: GITHUB_WEBHOOK_LOG_LEVEL -> logging.level (nested)
+  if (name === 'GITHUB_WEBHOOK_LOG_LEVEL') {
+    return 'logging.level';
+  }
   return name
     .replace(new RegExp(`^${COMPONENT_PREFIX}`), '')
     .toLowerCase();
 }
 
 function convertConfigValue(key, value) {
-  // Type conversion for port: string -> number
+  // Type conversion for port: string -> number with validation
   if (key === 'port' && typeof value === 'string') {
-    return parseInt(value, 10);
+    // Validate that the value is a pure integer (no trailing characters)
+    if (!/^\d+$/.test(value)) {
+      console.error(`[configure] Invalid port value: "${value}". Must be a pure integer.`);
+      process.exit(1);
+    }
+    const port = parseInt(value, 10);
+    // Validate port range
+    if (port < 1 || port > 65535) {
+      console.error(`[configure] Port out of range: ${port}. Must be between 1 and 65535.`);
+      process.exit(1);
+    }
+    return port;
   }
   return value;
+}
+
+/**
+ * Set a nested config value using dot notation
+ * @param {Object} obj - The config object
+ * @param {string} path - The dot-notation path (e.g., 'logging.level')
+ * @param {*} value - The value to set
+ */
+function setNestedValue(obj, path, value) {
+  const keys = path.split('.');
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!(keys[i] in current)) {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  current[keys[keys.length - 1]] = value;
 }
 
 try {
@@ -80,7 +113,14 @@ try {
   for (const [name, value] of Object.entries(collected)) {
     if (value === undefined || value === null || value === '') continue;
     const key = configKeyFromRequiredName(name);
-    config[key] = convertConfigValue(key, value);
+    const convertedValue = convertConfigValue(key, value);
+
+    // Use nested assignment for keys with dots (e.g., 'logging.level')
+    if (key.includes('.')) {
+      setNestedValue(config, key, convertedValue);
+    } else {
+      config[key] = convertedValue;
+    }
   }
 
   writeJsonFile(CONFIG_PATH, config);

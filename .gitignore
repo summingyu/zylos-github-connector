@@ -132,3 +132,6 @@ logs/
 # Claude Code
 .claude/settings.local.json
 .claude/
+
+# GSD workflow artifacts
+.planning/

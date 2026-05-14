@@ -52,7 +52,7 @@ describe('Configuration File Watcher', () => {
       const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
       const configModule = await import(configPath);
       assert.strictEqual(typeof configModule.watchConfig, 'function');
-      assert.strictEqual(configModule.watchConfig.length, 1, 'watchConfig should accept 1 argument');
+      assert.strictEqual(configModule.watchConfig.length, 2, 'watchConfig should accept 2 arguments (onChange, configPath)');
     });
 
     it('应导出 stopWatching 函数', async () => {
@@ -89,21 +89,12 @@ describe('Configuration File Watcher', () => {
   describe('Watcher Setup and Teardown', () => {
     it('应能启动和停止监控器', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         // Should not throw
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
         await wait(100);
         configModule.stopWatching();
 
@@ -115,23 +106,14 @@ describe('Configuration File Watcher', () => {
 
     it('应能重复调用 watchConfig', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         // Multiple start/stop cycles
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
         await wait(50);
-        configModule.watchConfig(() => {}); // Should close previous watcher
+        configModule.watchConfig(() => {}, testConfigPath); // Should close previous watcher
         await wait(50);
         configModule.stopWatching();
 
@@ -143,20 +125,11 @@ describe('Configuration File Watcher', () => {
 
     it('应能多次调用 stopWatching', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
         await wait(50);
         configModule.stopWatching();
         configModule.stopWatching(); // Should be idempotent
@@ -172,23 +145,14 @@ describe('Configuration File Watcher', () => {
   describe('Debouncing Mechanism', () => {
     it('应实现防抖机制', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         let reloadCount = 0;
         configModule.watchConfig(() => {
           reloadCount++;
-        });
+        }, testConfigPath);
 
         // Rapid changes
         await fs.writeFile(testConfigPath, JSON.stringify({ port: 4000 }, null, 2));
@@ -212,23 +176,14 @@ describe('Configuration File Watcher', () => {
     it('应使用 500ms 防抖延迟', async () => {
       // This test verifies the debounce delay is approximately 500ms
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         let reloadTime = null;
         configModule.watchConfig(() => {
           reloadTime = Date.now();
-        });
+        }, testConfigPath);
 
         const startTime = Date.now();
         await fs.writeFile(testConfigPath, JSON.stringify({ port: 4000 }, null, 2));
@@ -252,21 +207,12 @@ describe('Configuration File Watcher', () => {
   describe('Error Recovery', () => {
     it('重载失败时应不抛出异常', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         let errorThrown = false;
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
 
         // Write invalid JSON
         await fs.writeFile(testConfigPath, '{ invalid json }');
@@ -287,39 +233,34 @@ describe('Configuration File Watcher', () => {
 
     it('重载失败时应保持旧配置有效', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const loadConfig = originalModule.loadConfig;
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         // Load initial config
-        const initialConfig = await configModule.loadConfig();
+        const initialConfig = await configModule.loadConfig(testConfigPath);
         const initialPort = initialConfig.port;
 
-        let onChangeCalled = false;
-        configModule.watchConfig(() => {
-          onChangeCalled = true;
-        });
+        let reloadedConfig = null;
+        configModule.watchConfig((newConfig) => {
+          reloadedConfig = newConfig;
+        }, testConfigPath);
 
         // Write invalid JSON
         await fs.writeFile(testConfigPath, '{ invalid json }');
         await wait(700);
 
-        // onChange should not be called on error
-        assert.strictEqual(onChangeCalled, false, 'onChange should not be called on reload failure');
+        // onChange should not be called on error (config not reloaded)
+        assert.strictEqual(reloadedConfig, null, 'onChange should not be called on reload failure');
 
-        // Config should still be valid
-        const currentConfig = await configModule.loadConfig();
-        assert.strictEqual(currentConfig.port, initialPort, 'Config port should remain unchanged');
+        // Verify that loadConfig now throws error (file has invalid JSON)
+        await assert.rejects(
+          async () => await configModule.loadConfig(testConfigPath),
+          { message: /Invalid JSON/ }
+        );
+
+        // But the in-memory config from the initial load is still valid
+        assert.strictEqual(initialPort, 3000, 'Initial config should remain valid in memory');
 
         configModule.stopWatching();
       } finally {
@@ -331,27 +272,17 @@ describe('Configuration File Watcher', () => {
   describe('Event Notification', () => {
     it('onChange 应接收新配置和旧配置', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const loadConfig = originalModule.loadConfig;
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         // Load initial config
-        await configModule.loadConfig();
+        await configModule.loadConfig(testConfigPath);
 
         let receivedArgs = null;
         configModule.watchConfig((newConfig, oldConfig) => {
           receivedArgs = { newConfig, oldConfig };
-        });
+        }, testConfigPath);
 
         await fs.writeFile(testConfigPath, JSON.stringify({ port: 4000 }, null, 2));
         await wait(700);
@@ -377,23 +308,14 @@ describe('Configuration File Watcher', () => {
   describe('Platform Compatibility', () => {
     it('应处理 change 和 rename 事件', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         let eventHandled = false;
         configModule.watchConfig(() => {
           eventHandled = true;
-        });
+        }, testConfigPath);
 
         // Modify file (triggers change or rename depending on platform)
         await fs.writeFile(testConfigPath, JSON.stringify({ port: 4000 }, null, 2));
@@ -412,21 +334,12 @@ describe('Configuration File Watcher', () => {
   describe('Logging', () => {
     it('watchConfig 应记录开始监控的日志', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
         // This test verifies logging happens (manual verification)
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
         await wait(100);
         configModule.stopWatching();
 
@@ -438,20 +351,11 @@ describe('Configuration File Watcher', () => {
 
     it('stopWatching 应记录停止监控的日志', async () => {
       const { testDir, testConfigPath } = await createTestConfig({ port: 3000 });
-      const mockModulePath = path.join(testDir, 'config-mock.js');
+      const configPath = path.join(getProjectRoot(), 'src/lib/config.js');
+      const configModule = await import(configPath);
 
       try {
-        const mockCode = `
-          import * as originalModule from '${path.join(getProjectRoot(), 'src/lib/config.js')}';
-          export const CONFIG_PATH = '${testConfigPath}';
-          export const watchConfig = originalModule.watchConfig;
-          export const stopWatching = originalModule.stopWatching;
-        `;
-        await fs.writeFile(mockModulePath, mockCode);
-
-        const configModule = await import(`file://${mockModulePath}?t=${Date.now()}`);
-
-        configModule.watchConfig(() => {});
+        configModule.watchConfig(() => {}, testConfigPath);
         await wait(100);
         configModule.stopWatching();
 

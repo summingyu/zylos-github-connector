@@ -6,8 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test src/lib/__tests__/**/*.test.js",
-    "test:watch": "node --test --watch src/lib/__tests__/**/*.test.js",
+    "test": "node --test src/lib/__tests__/**/*.test.js tests/unit/**/*.test.js tests/integration/**/*.test.js",
+    "test:watch": "node --test --watch src/lib/__tests__/**/*.test.js tests/unit/**/*.test.js tests/integration/**/*.test.js",
     "test:webhook": "node scripts/test-webhook.js"
   },
   "homepage": "https://github.com/zylos-ai/zylos-github-connector#readme",
