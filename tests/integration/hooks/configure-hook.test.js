@@ -22,9 +22,8 @@ const getProjectRoot = () => {
 
 // Test helper: create temporary config directory
 const createTempConfigDir = async () => {
-  const tempDir = path.join(tmpdir(), `github-connector-hooks-test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-  await fs.mkdir(tempDir, { recursive: true });
-  return tempDir;
+  // Use fs.mkdtemp() for safe temporary directory creation
+  return await fs.mkdtemp(path.join(tmpdir(), 'github-connector-hooks-test-'));
 };
 
 // Test helper: cleanup temporary directory
@@ -34,12 +33,13 @@ const cleanupTempDir = async (tempDir) => {
       await fs.rm(tempDir, { recursive: true, force: true });
     }
   } catch (err) {
-    // Ignore cleanup errors
+    // Log warning but don't fail the test
+    console.error(`[warning] Failed to cleanup temp dir ${tempDir}:`, err.message);
   }
 };
 
 // Test helper: run configure hook with input
-const runConfigure = async (input, tempHome) => {
+const runConfigure = async (input, tempHome, timeout = 5000) => {
   return new Promise((resolve, reject) => {
     const configurePath = path.join(getProjectRoot(), 'hooks/configure.js');
 
@@ -54,6 +54,12 @@ const runConfigure = async (input, tempHome) => {
     let stdout = '';
     let stderr = '';
 
+    // Set up timeout to prevent hanging
+    const timer = setTimeout(() => {
+      proc.kill('SIGKILL');
+      reject(new Error(`Process timeout after ${timeout}ms`));
+    }, timeout);
+
     proc.stdin.write(JSON.stringify(input));
     proc.stdin.end();
 
@@ -66,10 +72,12 @@ const runConfigure = async (input, tempHome) => {
     });
 
     proc.on('close', (code) => {
+      clearTimeout(timer);
       resolve({ code, stdout, stderr });
     });
 
     proc.on('error', (err) => {
+      clearTimeout(timer);
       reject(err);
     });
   });
